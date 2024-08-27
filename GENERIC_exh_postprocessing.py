@@ -1,0 +1,278 @@
+############################################################################################################
+# This file handles pampro output for generic waveform output
+# Author: CAS
+# Date: 13/06/2024
+# Version: 1.0 Translated from Stata code
+############################################################################################################
+# Importing packages
+import numpy as np
+import config
+import os
+import pandas as pd
+import pytz
+from datetime import datetime, timedelta
+
+# READING IN FILELIST
+def reading_filelist():
+    os.chdir(os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.FILELIST_FOLDER))
+    filelist_df = pd.read_csv('filelist.txt', delimiter='\t')  # Reading in the filelist
+    filelist_df = filelist_df.drop_duplicates(subset=['filename_temp'])
+    files_list = filelist_df['filename_temp'].tolist()
+
+    return files_list
+
+# READING METADATA
+def reading_metadata(files_list):
+    metadata_dfs = []
+
+    for file_id in files_list:
+        metadata_file_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, f"metadata_{file_id}.csv")
+
+        if os.path.exists(metadata_file_path):
+            metadata_df = pd.read_csv(metadata_file_path)
+            metadata_df['file_id'] = file_id
+
+            columns_to_keep = ['file_id', 'subject_code', 'device', 'start_error', 'end_error', 'calibration_method', 'noise_cutoff_mg', 'processing_epoch', 'generic_first_timestamp', 'generic_last_timestamp', 'QC_first_battery_pct', 'QC_last_battery_pct', 'frequency', 'QC_anomalies_total', 'QC_anomaly_A', 'QC_anomaly_B', 'QC_anomaly_C', 'QC_anomaly_D', 'QC_anomaly_E', 'QC_anomaly_F', 'QC_anomaly_G', 'processing_script']
+            metadata_df = metadata_df.reindex(columns=columns_to_keep)
+
+            metadata_dfs.append(metadata_df)
+
+        else:
+            print(f"Metadata for file ID: {file_id} not found")
+            return
+
+    return metadata_dfs
+
+
+# READING DATA FILE
+def reading_datafile(files_list):
+    datafiles_dfs = []
+
+    for file_id in files_list:
+        datafile_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, f"{config.count_prefixes}_{file_id}.csv")
+
+        if os.path.exists(datafile_path):
+            datafile_df = pd.read_csv(datafile_path)
+            datafile_df['file_id'] = file_id
+            datafile_df.rename(columns={'id': 'database_id'}, inplace=True)
+            datafile_df.columns = [col[:-6] + "plus" if col.endswith("_99999") else col for col in datafile_df.columns]
+            datafile_df = datafile_df.drop(columns=[col for col in datafile_df.columns if any(var in col for var in config.VARIABLES_TO_DROP)])
+
+            datafiles_dfs.append(datafile_df)
+        else:
+            print(f"Data file for ID: {file_id} not found")
+            return
+
+    return datafiles_dfs
+
+# MERGING METADATA FILE AND DATA FILE AND FORMATTING MERGED DATAFRAME
+def merging_data(files_list, metadata_dfs, datafiles_dfs):
+    merged_dfs = []
+    time_resolutions = []
+
+    for metadata_df, datafile_df, file_id in zip(metadata_dfs, datafiles_dfs, files_list):
+        merged_df = pd.merge(datafile_df, metadata_df, on='file_id', how='left')
+        columns = merged_df.columns.tolist()
+        columns.insert(0, columns.pop(columns.index('file_id')))
+        merged_df = merged_df[columns]
+
+        # Reformat timestamp:
+        merged_df['timestamp'] = merged_df['timestamp'].str.replace(':000000', '')
+
+        # Create DATETIME variable. This is the monitor time. Not adjusted for BST
+        merged_df['DATETIME_ORIG'] = pd.to_datetime(merged_df['timestamp'], format='%d/%m/%Y %H:%M:%S')
+
+        # Changing order of columns and sorting the data
+        columns = merged_df.columns.tolist()
+        columns.insert(1, columns.pop(columns.index('timestamp')))
+        columns.insert(2, columns.pop(columns.index('DATETIME_ORIG')))
+        merged_df = merged_df[columns]
+        merged_df = merged_df.sort_values(by=['file_id', 'DATETIME_ORIG'])
+
+        time_difference = merged_df['DATETIME_ORIG'].iloc[1] - merged_df['DATETIME_ORIG'].iloc[0]
+        time_resolution = time_difference.total_seconds()/60
+        time_resolutions.append(time_resolution)
+
+        # Formatting the generic timestamps and creating first and last file_timestamps
+        generic_timestamps = ['generic_first_timestamp', 'generic_last_timestamp']
+        merged_df[generic_timestamps] = merged_df[generic_timestamps].apply(lambda x: x.str[:19])
+        file_timepoints = ['first_file_timepoint', 'last_file_timepoint']
+        merged_df[file_timepoints] = merged_df[generic_timestamps]
+        for variable in file_timepoints:
+            merged_df[variable] = pd.to_datetime(merged_df[variable], format='%d/%m/%Y %H:%M:%S')
+
+        # Generating DATETIME variable and correcting for daylight saving. For no clock change this time stays the same as DATETIME_ORIG
+        merged_df['DATETIME'] = merged_df['DATETIME_ORIG']
+
+        if config.CLOCK_CHANGES == 'Yes':
+            merged_df['DATETIME_COPY'] = merged_df['DATETIME']
+
+            #Retrieving timezone information and converting datetime_copy variable to specified timezone
+            tz = pytz.timezone(config.TIMEZONE)
+            merged_df['DATETIME_COPY'] = merged_df['DATETIME_ORIG'].dt.tz_localize('UTC').dt.tz_convert(tz)
+            merged_df['BST'] = merged_df['DATETIME_COPY'].apply(lambda x: x.dst() != timedelta(0))
+
+            # Creating bst variables, to check if there is a change through the datafrom from summer time to winter time or other way
+            prev_bst = None
+
+            bst_values = merged_df['BST'].unique()
+
+            if len(bst_values) == 2 and True in bst_values and False in bst_values:
+                adjustment = 0
+                for idx in range(len(merged_df)):
+                    curr_bst = merged_df.at[idx, 'BST']
+
+                    # If dataset goes over clock change, adding or subtracting 1 hour from DATETIME variable
+                    if prev_bst is not None and prev_bst != curr_bst:
+                        if not prev_bst and curr_bst:
+
+                            adjustment += 1
+                            print("Transition from winter to summer time detected at 1am")
+
+                        elif prev_bst and not curr_bst:
+
+                             adjustment -= 1
+                             print("Transition from summer to winter time detected at 2am")
+                    # OBS! IT IS CHANGING THE CLOCK AT 1AM BOTH TIMES, FIND A WAY TO MAKE IT CHANGE AT 2AM FROM SUMMER TO WINTER TIME.
+                    merged_df.at[idx, 'DATETIME'] += timedelta(hours=adjustment)
+                    prev_bst = curr_bst
+
+            else:
+                print("No clock changes")
+                pass
+        merged_df.drop(columns=['DATETIME_COPY', 'BST'], inplace=True)
+
+        # Calculating DATE and TIME variables with new time
+        merged_df['DATE'] = pd.to_datetime(merged_df['DATETIME']).dt.date
+        merged_df['TIME'] = pd.to_datetime(merged_df['DATETIME']).dt.time
+        merged_df['hourofday'] = pd.to_datetime(merged_df['DATETIME']).dt.hour + 1
+        merged_df['dayofweek'] = merged_df['DATETIME'].apply(lambda x: x.isoweekday())
+
+        # Changing order of columns
+        columns = merged_df.columns.tolist()
+        columns.insert(2, columns.pop(columns.index('DATETIME')))
+        columns.insert(3, columns.pop(columns.index('DATE')))
+        columns.insert(4, columns.pop(columns.index('TIME')))
+        columns.insert(5, columns.pop(columns.index('dayofweek')))
+        columns.insert(6, columns.pop(columns.index('hourofday')))
+        columns.insert(7, columns.pop(columns.index('DATETIME_ORIG')))
+        merged_df = merged_df[columns]
+
+        merged_dfs.append(merged_df)
+    return time_resolutions, merged_dfs
+
+# GENERATING INDICATOR VARIABLE TO FLAG THE START OF A FILE (FOR HOUSEKEEPING/VERIFICATION ONLY)
+def indicator_variable(time_resolutions, merged_dfs):
+    valid_dfs = []
+    for time_resolution, merged_df in zip(time_resolutions, merged_dfs):
+        merged_df['prestart'] = 0
+        merged_df.loc[merged_df['DATETIME'] <= merged_df['first_file_timepoint'], 'prestart'] = 1
+
+        merged_df['postend'] = 0
+        merged_df.loc[merged_df['DATETIME'] > merged_df['last_file_timepoint'], 'postend'] = 1
+        merged_df.loc[merged_df['DATETIME'] > merged_df['last_file_timepoint'] - pd.Timedelta(minutes=time_resolution), 'postend'] = 1
+
+        # Generating temporary tag to check if any valid hours. If there are any valid hours, it is dropping rows that are not valid. If no valid hours, keep all rows but flag temp_flag_no_valid_days
+        merged_df['valid'] = ~(merged_df['prestart'] == 1) & ~(merged_df['postend'] == 1)
+        merged_df['temp_flag_no_valid_days'] = 1 if not merged_df['valid'].any() else None
+        if merged_df['valid'].any():
+            merged_df = merged_df.loc[merged_df['valid']]
+
+        # Turning of notifications that we are using slices of dataframe.
+        pd.options.mode.chained_assignment = None
+
+        # Generating an index for freeday number
+        merged_df.sort_values(by=['file_id', 'DATETIME'], inplace=True)
+        merged_df.loc[:, 'row'] = merged_df.groupby('file_id').cumcount()
+        merged_df['row'] = np.floor(merged_df['row']/(1440/time_resolution)).astype(int)
+        merged_df['freeday_number'] = merged_df['row'] + 1
+        merged_df.drop(columns=['row'], inplace=True)
+        valid_dfs.append(merged_df)
+
+    return valid_dfs
+
+# GENERATING PWEAR VARIABLES
+def pwear_variables(valid_dfs, time_resolutions):
+    formatted_dfs = []
+
+    for valid_df, time_resolution in zip(valid_dfs, time_resolutions):
+        list_variables = ['ENMO_mean', 'ENMO_missing', 'ENMO_0plus']
+
+        # Stripping out buffer section used in pampro processing
+        valid_df = valid_df.drop(valid_df[(valid_df['ENMO_mean'] == -1) & (valid_df['ENMO_missing'] == 0) & (valid_df['ENMO_0plus'] == 0)].index)
+
+        # Drop any bout variables (if there are any) just in case these were to get listed to be included in the conversion
+        bout_variables = [col for col in valid_df.columns if '_mt' in col]
+        valid_df.drop(columns=bout_variables, inplace = True)
+
+        #Checking if enmo_0plus exists and then convert to fractions of time
+        if 'ENMO_0plus' in valid_df.columns:
+            variables_to_convert = [col for col in valid_df.columns if col.startswith('ENMO_') and col.endswith('plus')]
+
+            for variable in variables_to_convert:
+                valid_df[variable] = (valid_df[variable] / (60/valid_df['processing_epoch'])) / time_resolution
+        else:
+            pass
+
+        # Generating pwear variables and removing negative values
+        valid_df['Pwear'] = valid_df['ENMO_0plus']
+        valid_df.loc[valid_df['ENMO_mean'] < 0, 'Pwear'] = 0
+
+        # Looking for HPFVM/PITCH/ROLL/ENMO MEAN
+        variables_to_check = ["HPFVM", "PITCH", "ROLL", 'ENMO_mean']
+        for var in variables_to_check:
+            if var in valid_df.columns:
+                print(f"Processing variables: {var}")
+                valid_df.loc[valid_df['ENMO_n'] == 0, var] = None
+
+
+        formatted_dfs.append(valid_df)
+    return formatted_dfs
+
+# CREATING FLAG FOR MECHANICAL NOISE THAT IS BEING COUNTED AS WEAR TIME
+def mechanical_noise(formatted_dfs):
+
+    dataframes = []
+
+    for formatted_df in formatted_dfs:
+
+        formatted_df['FLAG_MECH_NOISE'] = np.nan
+
+        #Flagging epochs either from monitor issue/other sources (i.a. washing machines)
+        formatted_df.loc[(formatted_df['ENMO_mean'] >= 3000) & (formatted_df['Pwear'] != 0) & (formatted_df['ENMO_mean'].notna()), 'FLAG_MECH_NOISE'] = 1
+        # Flagging epochs that looks to have been worn - but it is just noise.
+        formatted_df.loc[(formatted_df['ENMO_mean'] >= 1500) & (formatted_df['Pwear'] >= 0.9) & (formatted_df['ENMO_mean'].notna()), 'FLAG_MECH_NOISE'] = 1
+        # Flagging epochs that have a very small amount of Pwear - but is getting a large amount of enmo for that blip of data.
+        formatted_df.loc[(formatted_df['ENMO_mean'] >= 600) & (formatted_df['Pwear'] <= 0.1) & (formatted_df['Pwear'] != 0) & (formatted_df['ENMO_mean'].notna()), 'FLAG_MECH_NOISE'] = 1
+
+        dataframes.append(formatted_df)
+
+    return dataframes
+
+# OUTPUTTING THE DATAFRAME TO THE INDIVIDUAL_PARTPRO_FILES FOLDER
+def outputting_dataframe(dataframes, files_list):
+
+    for dataframe, file_list in zip(dataframes, files_list):
+
+        dataframe.sort_values(by=['file_id', 'DATETIME'], inplace=True)
+
+        # Rounding all numeric columns to 4 decimal places
+        numeric_columns = dataframe.select_dtypes(include=['float64', 'float32']).columns
+        dataframe[numeric_columns] = dataframe[numeric_columns].round(4)
+
+        file_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.SUMMARY_FOLDER, config.INDIVIDUAL_PARTPRO_F, config.TIME_RES_FOLDER)
+        os.makedirs(file_path, exist_ok=True)
+        file_name = os.path.join(file_path, f"{file_list}_{config.OUTPUT_FILE_EXT}.csv")
+
+        dataframe.to_csv(file_name, index=False)
+
+
+if __name__ == '__main__':
+    files_list = reading_filelist()
+    metadata_dfs = reading_metadata(files_list)
+    datafiles_dfs = reading_datafile(files_list)
+    time_resolutions, merged_dfs = merging_data(files_list, metadata_dfs, datafiles_dfs)
+    valid_dfs = indicator_variable(time_resolutions, merged_dfs)
+    formatted_dfs = pwear_variables(valid_dfs, time_resolutions)
+    dataframes = mechanical_noise(formatted_dfs)
+    outputting_dataframe(dataframes, files_list)
