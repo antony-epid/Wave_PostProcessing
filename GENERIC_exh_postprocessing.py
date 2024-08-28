@@ -1,5 +1,5 @@
 ############################################################################################################
-# This file handles pampro output for generic waveform output
+# This file handles wave output for generic waveform output
 # Author: CAS
 # Date: 13/06/2024
 # Version: 1.0 Translated from Stata code
