@@ -135,7 +135,6 @@ def remove_files():
 
 
 if __name__ == '__main__':
-    os.chdir(config.PYTHON_CODE)
     create_folders()
     create_filelist()
     remove_files()

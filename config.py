@@ -27,7 +27,7 @@ PC_DATE = date.today().strftime("%d%b%Y")       # DO NOT EDIT.
 
 # --- FOLDERS --- #
 ROOT_FOLDER = 'C:/Users/Cecilie Agegaard/Documents/Cecilie/Wave/Axivity_Data_Processing'            # EDIT: Root folder for the project
-ANALYSIS_FOLDER = '_analysis/Python_Wave_PostProcessing'                                            # EDIT: Where the post-processing .py files are saved
+ANALYSIS_FOLDER = '_analysis/Python_WavePostProcessing-master'                                      # EDIT: Where the post-processing .py files are saved
 RESULTS_FOLDER = '_results'                                                                         # DO NOT EDIT BUT MAKE SURE _results FOLDER EXISTS IN ROOT_FOLDER: Where the wave outputs / results are saved
 RELEASES_FOLDER = '_releases'                                                                       # DO NOT EDIT BUT MAKE SURE _releases FOLDER EXISTS: Where the release files will be saved
 FEEDBACK_FOLDER = '_feedback'                                                                       # DO NOT EDIT BUT MAKE SURE _feedback FOLDER EXISTS: For the csv files used to create the feedback plot
