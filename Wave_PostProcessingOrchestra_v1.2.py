@@ -17,17 +17,17 @@ from colorama import Fore
 ################
 # These switches can be turned on/off depending on which part of the code is wanted to run. Providing all information is correct in config.py, the code should run without any issues
 # Change to 'Yes' to run script, change to 'No' if you don't want to run script.
-RUN_FILELIST_GENERATION = 'No'              # Create a filelist of all Wave output files. Depending on what is specified in the config.py, this might be all available or only the new files (that are not in the appended summary file)
-RUN_GENERIC_EXH_POSTPROCESSING = 'No'       # Generic exhaustive post processing works through generic updates to the Wave output. This needs to be completed before collapsing any data.
-RUN_COLLAPSE_RESULTS_TO_SUMMARY = 'No'      # Takes the file created from exhaustive post processing and collapses it down to a summary (1 line) file. These are saved as individual files.
-RUN_COLLAPSE_RESULTS_TO_DAILY = 'No'        # Takes the file created from exhaustive post processing and collapses it down to a daily (1 line per day) file. These are saved as individual files.
-RUN_APPEND_SUMMARY_FILES = 'No'             # Appends together the individual summary level data files (created within the collapse results to summary file)
-RUN_APPEND_DAILY_FILES = 'No'               # Appends together the daily level data files (created within the collapse results to summary file)
-RUN_APPEND_HOURLY_FILES = 'No'              # Appends together the hourly level data files (created within the collapse results to summary file)
-RUN_VERIFICATION_CHECKS = 'No'              # Verification code will run some basic checks on the summary and hourly level data looking for potential issues (i.e. duplicate/ extreme outliers). Does not need to be ran to prepare release files, but useful to fully check data. Will be outputted in the _logs folder.
-RUN_PREPARE_SUMMARY_RELEASE = 'No'          # Prepares summary releases. Will be outputted in the _releases folder together with a data dictionary.
-RUN_PREPARE_DAILY_RELEASE = 'No'            # Prepares daily releases. Will be outputted in the _releases folder together with a data dictionary
-RUN_PREPARE_HOURLY_RELEASE = 'No'           # Prepares hourly releases. Will be outputted in the _releases folder together with a data dictionary.
+RUN_FILELIST_GENERATION = 'Yes'              # Create a filelist of all Wave output files. Depending on what is specified in the config.py, this might be all available or only the new files (that are not in the appended summary file)
+RUN_GENERIC_EXH_POSTPROCESSING = 'Yes'       # Generic exhaustive post processing works through generic updates to the Wave output. This needs to be completed before collapsing any data.
+RUN_COLLAPSE_RESULTS_TO_SUMMARY = 'Yes'      # Takes the file created from exhaustive post processing and collapses it down to a summary (1 line) file. These are saved as individual files.
+RUN_COLLAPSE_RESULTS_TO_DAILY = 'Yes'        # Takes the file created from exhaustive post processing and collapses it down to a daily (1 line per day) file. These are saved as individual files.
+RUN_APPEND_SUMMARY_FILES = 'Yes'             # Appends together the individual summary level data files (created within the collapse results to summary file)
+RUN_APPEND_DAILY_FILES = 'Yes'               # Appends together the daily level data files (created within the collapse results to summary file)
+RUN_APPEND_HOURLY_FILES = 'Yes'              # Appends together the hourly level data files (created within the collapse results to summary file)
+RUN_VERIFICATION_CHECKS = 'Yes'              # Verification code will run some basic checks on the summary and hourly level data looking for potential issues (i.e. duplicate/ extreme outliers). Does not need to be ran to prepare release files, but useful to fully check data. Will be outputted in the _logs folder.
+RUN_PREPARE_SUMMARY_RELEASE = 'Yes'          # Prepares summary releases. Will be outputted in the _releases folder together with a data dictionary.
+RUN_PREPARE_DAILY_RELEASE = 'Yes'            # Prepares daily releases. Will be outputted in the _releases folder together with a data dictionary
+RUN_PREPARE_HOURLY_RELEASE = 'Yes'           # Prepares hourly releases. Will be outputted in the _releases folder together with a data dictionary.
 RUN_DATA_QC = 'Yes'                          # Running data QC. QC log will be outputted in the _logs folder.
 
 
@@ -105,6 +105,6 @@ if __name__ == '__main__':
         print_message("RUN THE DATA QC FROM WAVE")
         run_script("Data_QC.py")
 
-    print_message("The Wave Post Processing code has finished running successfully. Press Enter to close the script.")
+    print_message("The Wave Post Processing code has finished running successfully. \n If ran in PyCharm you can now close PyCharm. \n If ran as batch file: Press Enter to close the script.")
 
 

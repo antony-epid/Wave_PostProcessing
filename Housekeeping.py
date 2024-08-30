@@ -5,9 +5,6 @@
 # Version: 1.0 Translated from Stata code
 ############################################################################################################
 
-# --- IMPORTING PACKAGES --- #
-import pandas as pd
-
 # --- IDs that should be removed from data releases --- #
 # Add id's that should be removed from final releases. Add a comma after the previous id and enter the new id in ''
 ids_to_remove = [

@@ -625,9 +625,9 @@ if __name__ == '__main__':
     verif_log = create_verif_log("VERIFICATION OF OUTPUT SUMMARY OVERALL MEANS")
     summary_df, summary_file_exists = dataframe(file_name=config.SUM_OUTPUT_FILE)
 
-    # If dataframe exists, create include variable and print out summary of this variable as well as summarising the startdata
+    # If dataframe exists, create include variable and print out summary of this variable as well as summarising the startdate
     if summary_file_exists:
-        df = include_criteria(log=verif_log, df=summary_df, text_to_log="Summarising include variable: \n Include = 0 (include criteria are met), Include = 1 (include criteria are not met).", x=0, y=0, z=0)
+        df = include_criteria(log=verif_log, df=summary_df, text_to_log=f"Summarising include variable: \n Include = 0: Include criteria are not met (Pwear < {config.VER_PWEAR}, Pwear morning < {config.VER_PWEAR_MORN} and Pwear noon/afternoon/night < {config.VER_PWEAR_QUAD}). \n Include = 1: Include criteria are met (Pwear >= {config.VER_PWEAR}, Pwear morning >= {config.VER_PWEAR_MORN} and Pwear noon/afternoon/night >= {config.VER_PWEAR_QUAD}).", x=0, y=0, z=0)
         df = sum_startdate(log=verif_log, df=summary_df, text_to_log="Summarising start date: \n Check that the minimum and maximum start date falls within the expected testing dates.", x=0, y=0, z=0)
         df = tagging_duplicates(df=summary_df, variables=['device', 'generic_first_timestamp', 'generic_last_timestamp'])
 
@@ -761,7 +761,7 @@ if __name__ == '__main__':
             create_var="ENMO_0plus_check",
             var_diff="ENMO_n_0plus_diff",
             text_to_log="Summarising the difference between ENMO_n and ENMO_0plus * 720, if these are not equal to each other",
-            text_no_error="No observations to summarise: ENMO_n and ENMO_0plus * 720 are equal to each other for all observations")
+            text_no_error="ENMO_n and ENMO_0plus * 720 are equal to each other for all observations")
 
         # Generating difference between the first file timepoint and DATETIME_ORIG. This can check if the ENMO_n_0plus_diff is due to the last timepoint being part way through an hour
         diff_enmo(
@@ -770,7 +770,7 @@ if __name__ == '__main__':
             var2='last_file_timepoint',
             var3='DATETIME_ORIG',
             log=verif_log,
-            text_to_log="Count if diff in enmo_n & enmo_0plus NOT due to first or last timepoint in the file:",
+            text_to_log="Count of hours in hourly file with a difference in enmo_n & enmo_0plus that are NOT due to first or last timepoint in the file:",
             text_no_error="There are no observations with differences between ENMO_n and ENMO_0plus * 720")
 
         # Summarising ENMO_0plus if thresholds are not removes.

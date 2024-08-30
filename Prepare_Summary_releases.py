@@ -55,7 +55,7 @@ def formatting_summary_file():
     # --- SECTION TO RUN HOUSEKEEPING AND DROP FILES NOT NEEDED IN FINAL RELEASE --- #
     if config.RUN_HOUSEKEEPING == 'Yes':
         print(Fore.GREEN + "RUNNING HOUSEKEEPING AND DROPPING FILES THAT ARE NOT NEEDED IN FINAL RELEASE" + Fore.RESET)
-        summary_df = summary_df[~summary_df['id'].isin(ids_to_remove)]
+        summary_df = summary_df[(~summary_df['id'].isin(ids_to_remove)) & (~summary_df['filename'].isin(ids_to_remove))]
 
     # Counting number of files/IDs and print the IDs
     count_number_ids = summary_df['id'].count()

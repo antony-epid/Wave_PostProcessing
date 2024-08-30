@@ -51,7 +51,7 @@ def formatting_hourly_file():
     # --- SECTION TO RUN HOUSEKEEPING AND DROP FILES NOT NEEDED IN FINAL RELEASE --- #
     if config.RUN_HOUSEKEEPING == 'Yes':
         print(Fore.GREEN + "RUNNING HOUSEKEEPING AND DROPPING FILES THAT ARE NOT NEEDED IN FINAL RELEASE" + Fore.RESET)
-        hourly_df = hourly_df[~hourly_df['id'].isin(ids_to_remove)]
+        hourly_df = hourly_df[(~hourly_df['id'].isin(ids_to_remove)) & (~hourly_df['filename'].isin(ids_to_remove))]
 
     # Counting number of files/IDs and print the IDs
     count_number_ids = hourly_df['id'].count()

@@ -1,2 +1,0 @@
-"C:\Users\Cecilie Agegaard\AppData\Local\Programs\Python\Python312\python.exe" "C:\Users\Cecilie Agegaard\Documents\Cecilie\Wave\_analysis\scripts\Python_Wave_PostProcessing\Python_Wave_PostProcessing\Wave_PostProcessingOrchestra_v1.2.py"
-pause
