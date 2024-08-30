@@ -33,7 +33,7 @@ The accelerometer files should be saved in the _data folder and the output from 
 ### Install dependencies
 Certain python modules are needed to be able to run the code. A requirements.txt  it saved within the ZIP file that was downloaded when downloading the code. This text file contains all requirements needed to be able to run the code. See the User Guides on [GitHub wiki](https://github.com/CAS254/Wave_PostProcessing/wiki) for detailed guide on how to install the depencies.
 
-# Editing the script to study specific setting
+# Preparing script to run
 For a description of the different part of the Wave Post Processing script see [Explanation of code](https://github.com/CAS254/Wave_PostProcessing/wiki/2.-Explanation-of-code). 
 
 Some variables in the script needs editing to study specific setting before executing it. The 2 files that will need editing are the **config.py** and the **Wave_PostProcessingOrchestra_v.1.2.py**. See [GitHub Wiki](https://github.com/CAS254/Wave_PostProcessing/wiki) for in-depth instructions on how to edit and run the script.
