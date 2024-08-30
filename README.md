@@ -1,12 +1,14 @@
 # Introduction
 Wave Post Processing is a python project that can post process the output of accelerometery data that has been processed through Wave. The Wave Post Processing project can be run either through PyCharm or through a batch file. Follow the user guides on how to setup, prepare and run the project with the two different approaches.
 
+Follow the reposity [wiki](https://github.com/CAS254/Wave_PostProcessing/wiki) for detailed user guide on how to set up and run the script. 
+
 # Prerequisites
 - Output from accelerometer files that have been processed through Wave.
 - Python version 3.12 or higher
 - PyCharm Community Edition (If you wish to run the script through PyCharm, can also be run through a batch script and thus installation of PyCharm is not neccesary)
 
-### further notes 
+### Further notes 
 - This process has been developed on Windows. It has NOT been tested for any other operating system type, e.g. macOS.
 - The script has been tested on Python version 3.12. Future versions may be incompatible, although will be tested as they are released.
 - The script has been tested on hourly (h) level data. It has NOT been tested on minute (m) level data. 
