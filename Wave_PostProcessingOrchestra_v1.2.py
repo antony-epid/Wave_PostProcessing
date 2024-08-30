@@ -105,6 +105,6 @@ if __name__ == '__main__':
         print_message("RUN THE DATA QC FROM WAVE")
         run_script("Data_QC.py")
 
-    print_message("The Wave Post Processing code has finished running successfully. Press any key to close the script.")
+    print_message("The Wave Post Processing code has finished running successfully. Press Enter to close the script.")
 
 
