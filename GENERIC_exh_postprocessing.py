@@ -127,15 +127,16 @@ def merging_data(files_list, metadata_dfs, datafiles_dfs):
                         if not prev_bst and curr_bst:
 
                             adjustment += 1
-                            print("Transition from winter to summer time detected at 1am")
+                            print(f"Transition from winter to summer time detected at 1am for the file id: {file_id}")
 
                         elif prev_bst and not curr_bst:
 
                              adjustment -= 1
-                             print("Transition from summer to winter time detected at 2am")
+                             print(f"Transition from summer to winter time detected at 1am for the file id: {file_id}")
                     # OBS! IT IS CHANGING THE CLOCK AT 1AM BOTH TIMES, FIND A WAY TO MAKE IT CHANGE AT 2AM FROM SUMMER TO WINTER TIME.
                     merged_df.at[idx, 'DATETIME'] += timedelta(hours=adjustment)
                     prev_bst = curr_bst
+                print("Date and time variables have been adjusted for clock changes.")
 
             else:
                 print("No clock changes")
