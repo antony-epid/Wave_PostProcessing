@@ -83,7 +83,7 @@ if __name__ == '__main__':
     # Running the Verification_Checks script:
     if RUN_VERIFICATION_CHECKS.lower() == 'yes':
         print_message("COMPLETING VERIFICATION CHECKS ON SUMMARY AND HOURLY DATA")
-        run_script("Verification_Checks_v1.2.py")
+        run_script("Verification_Checks.py")
 
     # Preparing summary releases
     if RUN_PREPARE_SUMMARY_RELEASE.lower() == 'yes':
