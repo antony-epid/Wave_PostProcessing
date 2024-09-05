@@ -6,12 +6,16 @@
 ############################################################################################################
 # IMPORTING PACKAGES #
 import docx
+
 import config
 import os
 import pandas as pd
 from docx.shared import RGBColor
 import operator
 from docx.enum.section import WD_ORIENTATION, WD_SECTION
+
+from Data_QC import information_to_qc_log
+
 
 # --- Creating verification log --- #
 def create_verif_log(log_header):
@@ -56,6 +60,21 @@ def add_text(log, text_to_log, x, y, z):
     paragraph = log.add_paragraph()
     run = paragraph.add_run(f"{text_to_log}")
     run.bold = True
+    run.font.color.rgb = RGBColor(x, y, z)
+
+# --- Adding description text to log --- #
+def add_description_text(log, description, x, y, z):
+    """
+    This function adds a description text to the verification log
+    :param log: The verification log that the output gets printed to.
+    :param description: The explanatory text that are being printed to the log.
+    :param x, y, z: Specifies the color that the text will be printed in. Black text= (0,0,0), red text = (255,0,0), green text = (0,155,0)
+    :return: None
+    """
+    # Adding to the verification log
+    paragraph = log.add_paragraph()
+    run = paragraph.add_run(f"{description}")
+    #run.bold = False
     run.font.color.rgb = RGBColor(x, y, z)
 
 def add_text_no_error(log, text_no_error):
@@ -111,8 +130,55 @@ def dataframe(file_name):
         file_exists = False
     return df, file_exists
 
+
+# --- PRINTING FILE AND DEVICE INFORMATION TO VERIFICATION LOG --- #
+def information_to_verif_log(log, df, table, variable_to_count, text_to_log, count_mode):
+    """
+    This function counts the frequency of a variable in the summary dataset and prints this together with a table to the verification log.
+    :param log: the verification log that it is being printed to.
+    :param variable_to_count: The variable which is being counted and printed in the qc log.
+    :param text_to_log: The text that will be printed above the table in the data qc log.
+    :param count_mode: Defining if all should be counted or only unique values of the variable should be counted.
+    :return:
+    """
+    # Counting frequency
+    if count_mode == 'total':
+        count = df[variable_to_count].count()
+    elif count_mode == 'unique':
+        count = df[variable_to_count].nunique()
+
+    # Adding to the qc_log
+    paragraph = log.add_paragraph()
+    run = paragraph.add_run(f"{text_to_log}: {count}")
+    run.bold = True
+
+    if table == 'Yes':
+        # Calculating frequency of the variable
+        frequency = df[variable_to_count].value_counts()
+
+        # Adding table to qc log
+        table = log.add_table(rows=1, cols=2)
+        table.style = 'Table Grid'
+
+        # Defining the header row:
+        hdr_cells = table.rows[0].cells
+        hdr_cells[0].text = 'Frequency'
+        hdr_cells[1].text = variable_to_count
+
+        # Adding the values to the table
+        for file_value, freq in frequency.items():
+            row_cells = table.add_row().cells
+            row_cells[0].text = str(freq)
+            row_cells[1].text = str(file_value)
+
+        log.add_paragraph("\n")
+        save_verif_log(log)
+
+    else:
+        save_verif_log(log)
+
 # --- GENERATING INCLUDE CRITERIA --- ~
-def include_criteria(log, df, text_to_log, x, y, z):
+def include_criteria(log, df, text_to_log, description):
     """
     This function creates an include variable, to tag if data files should be included in release based on certain criteria.
     :param log: Where the verification checks gets outputted to.
@@ -137,7 +203,8 @@ def include_criteria(log, df, text_to_log, x, y, z):
     include_cum_percent = include_percent.cumsum()
 
     # Adding to the verification log
-    add_text(verif_log, text_to_log, x, y, z)
+    add_text(log, text_to_log, 0, 0, 0)
+    add_description_text(log, description, 0, 0, 0)
 
     # Adding table to verification log
     table = log.add_table(rows=1, cols=4)
@@ -173,7 +240,7 @@ def include_criteria(log, df, text_to_log, x, y, z):
     return df
 
 # --- Summarising startdate to check it falls inside the expected testing dates --- #
-def sum_startdate(log, df, text_to_log, x, y, z):
+def sum_startdate(log, df, text_to_log, description, x, y, z):
     """
     Summarising the start time variable to be able to check if they all fall in between the expected test dates.
     :param log: Verification log where the verification checks gets outputted to.
@@ -188,6 +255,7 @@ def sum_startdate(log, df, text_to_log, x, y, z):
 
     # Adding to the verification log
     add_text(log, text_to_log, x, y, z)
+    add_description_text(log, description, x, y, z)
 
     # Adding table to verification log
     table = log.add_table(rows=1, cols=5)
@@ -214,15 +282,75 @@ def sum_startdate(log, df, text_to_log, x, y, z):
     return df
 
 # --- Tagging duplicates --- #
-def tagging_duplicates(df, variables):
+def tagging_duplicates(df, dups, variables):
     """
     This function tags duplicates in the dataframe based on specified variables
     :param df: The dataframe that the duplicates check should be performed on.
     :param variables: variables to check if there are duplicates.
     :return: df: The updated dataframe.
     """
-    df['duplicates_data'] = df.duplicated(subset=variables).astype(int)
+    df[dups] = df.duplicated(subset=variables).astype(int)
     return df
+
+# --- Printing summary statistics of all pwear variabels --- #
+def pwear_statistics(log, df):
+    """
+    This function creates statistics for all Pwear variables and outputs them in the data qc log.
+    :param log: The log book wear the verification checks gets printed to.
+    :param df: The dataframe which is the imported summary means dataset.
+    :return:
+    """
+    variables = [col for col in df.columns if col.startswith('Pwear')]
+
+    # Adding to the qc_log
+    paragraph = log.add_paragraph()
+    run = paragraph.add_run("Compliance overview - Quadrant hours")
+    run.bold=True
+
+    # Adding table to qc log
+    table = log.add_table(rows=1, cols=8)
+    table.style = 'Table Grid'
+    table.bold = True
+
+    # Defining the header row
+    hdr_cells = table.rows[0].cells
+    headers = ['Variable', 'Count', 'Mean', '5th percentile', '25th percentile', '50th percentile', '75th percentile', '95th percentile']
+    for i, header in enumerate(headers):
+        paragraph = hdr_cells[i].paragraphs[0]
+        run = paragraph.add_run(header)
+        run.bold = True
+
+    # Formatting to get the statistics with only 2 decimals
+    def format_statistics(stat):
+        return f"{stat:.2f}" if pd.notnull(stat) else "N/A"
+
+    # Loop through adding rows for each variable
+    def add_table_row(table, data):
+        row_cells = table.add_row().cells
+        for i, value in enumerate(data):
+            row_cells[i].text = value
+
+    for variable in variables:
+        data = df[variable]
+        if data.empty:
+            continue
+
+    # Adding the statistics to the table
+        stats = [
+            variable,
+            str(data.count()),
+            format_statistics(data.mean()),
+            format_statistics(data.quantile(0.05)),
+            format_statistics(data.quantile(0.25)),
+            format_statistics(data.quantile(0.50)),
+            format_statistics(data.quantile(0.75)),
+            format_statistics(data.quantile(0.95))
+        ]
+        add_table_row(table, stats)
+
+    log.add_paragraph("\n")
+    save_verif_log(log)
+
 
 # --- Creating pwear_quad_diff variable to check that PWear is equal to the sum of Pwear of the quad times
 def create_pwear_diff(df):
@@ -336,7 +464,6 @@ def verif_checks(comparison_operator, variable, cut_off, df, log, text_to_log, c
     else:
         # Adding to the qc_log
         add_text_no_error(log, text_no_error)
-        log.add_paragraph("\n")
         save_verif_log(log)
 
 
@@ -369,8 +496,18 @@ def outliers(df, log, list_variables, extra_variable, sort, text_to_log):
     # Sorting dataframe by variable
     df = df.sort_values(by=sort)
 
+    # Filtering to only print out 10 files with highest/lowest value of enmo_mean
+    if len(df) > 10:
+        lowest = df.nsmallest(10, sort)
+        highest = df.nlargest(10, sort)
+        df_combined = pd.concat([lowest, highest])
+        df_combined = df_combined.sort_values(by=sort)
+    else:
+        df_combined = df
+        df_combined = df_combined.sort_values(by=sort)
+
     # Adding data to table
-    for index, row_data in df.iterrows():
+    for index, row_data in df_combined.iterrows():
         if row_data[sort] != -1 and not pd.isna(row_data[sort]):
             row_cells = table.add_row().cells
             for i, var in enumerate(list_variables):
@@ -424,7 +561,7 @@ def sum_stat_to_log(table, summary_stats, variable):
 
 
 # --- Getting summary statistics for specified variable and printing to verification log --- #
-def get_summary_stats(condition_operator, df, log, variables, text_to_log, text_no_files):
+def get_summary_stats(condition_operator, df, log, variables, text_to_log, description, text_no_files):
     """
     Summarising variables and printing summary statistics to log
     :param condition_operator: Condition of which the summary statistics count is being checked with
@@ -432,6 +569,7 @@ def get_summary_stats(condition_operator, df, log, variables, text_to_log, text_
     :param log: The verification log where the statistics are being outputted
     :param variables: The variable(s) that is being summarised
     :param text_to_log: Text to print to log to describe what is being checked
+    :param description: Discription to print to log to further explain what is being checked.
     :param text_no_files: Text to print to log if no files to summarise
     :return:
     """
@@ -448,6 +586,7 @@ def get_summary_stats(condition_operator, df, log, variables, text_to_log, text_
 
         # Adding to the verification log
         add_text(log, text_to_log, 0, 0, 0)
+        add_description_text(log, description, 0, 0, 0)
 
         # Adding table to verification log
         table = sum_stat_header(log)
@@ -471,6 +610,72 @@ def get_summary_stats(condition_operator, df, log, variables, text_to_log, text_
         log.add_paragraph("\n")
         save_verif_log(log)
 
+
+#--- Checking for any enmo negative values --- #
+def check_negative_values(df, log, text_to_log, description, variables, text_no_error):
+    '''
+    This function checks if any files have negative values of any of the enmo variables. If any negative files it will print the first of these for each file.
+    :param df: Dataframe that it is looking within for negative enmo values.
+    :param log: The log where it is being printed to.
+    :param text_to_log: Text to log explaining what it is showing.
+    :param description: Text to further explain what to look for.
+    :param variables: Variables that are being verified.
+    :param text_no_error: Text to log if no files meets the criteria.
+    :return:
+    '''
+    # Creating flag and list if any variables with negative values
+    flag_negative_found = False
+    files_with_negative_values = set()
+    grouped = df.groupby('id')
+
+    # Adding files with negative values to list
+    for file_id, group in grouped:
+        for _, row in group.iterrows():
+            for var in variables:
+                if row[var] < 0:
+                    files_with_negative_values.add(file_id)
+                    break
+
+    # If any files with negative values, print it to log
+    if files_with_negative_values:
+
+        add_text(log, text_to_log, 0, 0, 0)
+        add_description_text(log, description, 0, 0, 0)
+
+        table = log.add_table(rows=1, cols=4)
+        table.style = 'Table Grid'
+
+        hdr_cells = table.rows[0].cells
+        headers = ['File ID', 'Variable name', 'Variable value', 'Include value']
+        for idx, header in enumerate(headers):
+            run = hdr_cells[idx].paragraphs[0].add_run(header)
+            run.bold = True
+
+        include_present = 'include' in df.columns
+
+        for file_id in files_with_negative_values:
+            file_group = grouped.get_group(file_id)
+            for _, row in file_group.iterrows():
+                for var in variables:
+                    if row[var] < 0:
+                        value = row[var]
+                        include_value = row['include'] if include_present else 'N/A'
+
+                        row_cells = table.add_row().cells
+                        row_cells[0].text = str(file_id)
+                        row_cells[1].text = var
+                        row_cells[2].text = str(value)
+                        row_cells[3].text = str(include_value)
+                        break
+                break
+        flag_negative_found = True
+
+    # If no variables with negative values, printing a message to log.
+    if not flag_negative_found:
+        add_text_no_error(log, text_no_error)
+
+    log.add_paragraph("\n")
+    save_verif_log(log)
 
 # --- Comparing ENMO_N and ENMO_0_99999 --- #
 def compare_enmo(df, log, create_var, var_diff, text_to_log, text_no_error):
@@ -543,7 +748,7 @@ def diff_enmo(df, var1, var2, var3, log, text_to_log, text_no_error):
         save_verif_log(log)
 
 
-def sum_enmo(remove_threshold, df, log, variables, text_to_log, text_no_files):
+def sum_enmo(remove_threshold, df, log, variables, text_to_log, description, text_no_files):
     """
     Summarising ENMO variables and printing to log
     :param df: Dataframe with enmo variables in
@@ -558,6 +763,7 @@ def sum_enmo(remove_threshold, df, log, variables, text_to_log, text_no_files):
 
         # Adding to the verification log
         add_text(log, text_to_log, 0, 0, 0)
+        add_description_text(log, description, 0, 0, 0)
         table = sum_stat_header(log)
 
         for i, variable in enumerate(variables):
@@ -603,7 +809,7 @@ def negative_values(df, log, text_to_log, variable, list_variables, text_no_erro
 
 
 # --- CREATING ENMO_MEAN FLAG TO PICK OUT FILES FOR CHECKING --- #
-def enmo_flag(df, log, flag, variable):
+def enmo_flag(df, log, flag, variable, description):
     """Counting how many files have an ENMO_mean above a specified flag
     :param df: Dataframe with the files.
     :param log: The verification log where the count it printed to.
@@ -614,6 +820,7 @@ def enmo_flag(df, log, flag, variable):
 
     count = df[(df[variable] > flag) & (~df[variable].isna()) & (df['QC_anomalies_total'] == 0)].shape[0]
     add_text(log, text_to_log=f"Number of files with {variable} > {variable}_flag ({flag}) \n Count: {count}", x=0, y=0, z=0)
+    add_description_text(log, description, 0, 0, 0)
     save_verif_log(log)
 
 
@@ -625,11 +832,16 @@ if __name__ == '__main__':
     verif_log = create_verif_log("VERIFICATION OF OUTPUT SUMMARY OVERALL MEANS")
     summary_df, summary_file_exists = dataframe(file_name=config.SUM_OUTPUT_FILE)
 
-    # If dataframe exists, create include variable and print out summary of this variable as well as summarising the startdate
+    # If dataframe exists, print out files processed, devices used and summary of start dates
     if summary_file_exists:
-        df = include_criteria(log=verif_log, df=summary_df, text_to_log=f"Summarising include variable: \n Include = 0: Include criteria are not met (Pwear < {config.VER_PWEAR}, Pwear morning < {config.VER_PWEAR_MORN} and Pwear noon/afternoon/night < {config.VER_PWEAR_QUAD}). \n Include = 1: Include criteria are met (Pwear >= {config.VER_PWEAR}, Pwear morning >= {config.VER_PWEAR_MORN} and Pwear noon/afternoon/night >= {config.VER_PWEAR_QUAD}).", x=0, y=0, z=0)
-        df = sum_startdate(log=verif_log, df=summary_df, text_to_log="Summarising start date: \n Check that the minimum and maximum start date falls within the expected testing dates.", x=0, y=0, z=0)
-        df = tagging_duplicates(df=summary_df, variables=['device', 'generic_first_timestamp', 'generic_last_timestamp'])
+        information_to_verif_log(log=verif_log, df=summary_df, table='No', variable_to_count='id', text_to_log="Number of files processed", count_mode='total')
+        information_to_verif_log(log=verif_log, df=summary_df, table='Yes', variable_to_count='device', text_to_log="Number of devices used", count_mode='unique')
+        df = sum_startdate(log=verif_log, df=summary_df, text_to_log="Summary of start dates:", description="Check that the minimum and maximum start date falls within the expected testing dates.", x=0, y=0, z=0)
+
+        # Create include variable
+        df = include_criteria(log=verif_log, df=summary_df, text_to_log="Summarising include variable:", description= f"Include = 0: Include criteria are not met (Pwear < {config.VER_PWEAR}, Pwear morning < {config.VER_PWEAR_MORN} and Pwear noon/afternoon/night < {config.VER_PWEAR_QUAD}). \n Include = 1: Include criteria are met (Pwear >= {config.VER_PWEAR}, Pwear morning >= {config.VER_PWEAR_MORN} and Pwear noon/afternoon/night >= {config.VER_PWEAR_QUAD}).")
+        df = tagging_duplicates(df=summary_df, dups='duplicates_data', variables=['device', 'generic_first_timestamp', 'generic_last_timestamp'])
+        df = tagging_duplicates(df=summary_df, dups='duplicates_id', variables=['id'])
 
         # Printing files that have not calibrated
         verif_checks(
@@ -653,7 +865,86 @@ if __name__ == '__main__':
             text_to_log="There are duplicates in this summary dataset. \n Add the duplicate file to the Housekeeping file to remove data from final dataset.",
             column_number=4,
             list_of_headers=['id', 'device', 'generic_first_timestamp', 'generic_last_timestamp'],
-            text_no_error="There are no duplicates in this summary dataset")
+            text_no_error="There are no duplicated data in this summary dataset")
+
+        verif_checks(
+            comparison_operator="!=",
+            variable="duplicates_id",
+            cut_off=0,
+            df=summary_df,
+            log=verif_log,
+            text_to_log="There are files with duplicate IDs. \n Add the duplicate file to the Housekeeping file to remove data from final dataset.",
+            column_number=3,
+            list_of_headers=['id', 'device', 'generic_first_timestamp'],
+            text_no_error="There are no duplicates based on id only."
+        )
+
+        # Checking length of recording
+        verif_checks(
+            comparison_operator="<",
+            variable='RecordLength',
+            cut_off=config.MIN_INCLUSION_HRS,
+            df=summary_df,
+            log=verif_log,
+            text_to_log=f"There are potential battery functionality issues. Some recordings are less than {config.MIN_INCLUSION_HRS} hours. It is recommended to test the following devices.",
+            column_number=3,
+            list_of_headers=['id', 'device', 'RecordLength'],
+            text_no_error=f"All recordings are above {config.MIN_INCLUSION_HRS} hours. No devices to check."
+        )
+
+        # Checking for any anomalies
+        verif_checks(
+            comparison_operator=">",
+            variable=['qc_anomaly_g', 'qc_anomaly_f'],
+            cut_off=0,
+            df=summary_df,
+            log=verif_log,
+            text_to_log="There are timestamp anomaly F's or G's in the files. It is recommended to remove these devices from circulation.",
+            column_number=4,
+            list_of_headers=['id', 'device', 'qc_anomaly_g', 'qc_anomaly_f'],
+            text_no_error="There are no timestamp anomalies in the files. No files to check.")
+
+        # Checking first and last battery percentage
+        verif_checks(
+            comparison_operator="<",
+            variable='qc_first_battery_pct',
+            cut_off=75,
+            df=summary_df,
+            log=verif_log,
+            text_to_log="Some devices were set up with low battery (<75%)",
+            column_number=4,
+            list_of_headers=['id', 'device', 'qc_first_battery_pct', 'qc_last_battery_pct'],
+            text_no_error="All devices had >75% battery when set up.")
+
+        verif_checks(
+            comparison_operator="<",
+            variable='qc_last_battery_pct',
+            cut_off=10,
+            df=summary_df,
+            log=verif_log,
+            text_to_log="Some devices had a low battery percentage at the end of recording (<10%).",
+            column_number=4,
+            list_of_headers=['id', 'device', 'qc_first_battery_pct', 'qc_last_battery_pct'],
+            text_no_error="All devices had >10% battery at the end of recording. No devices to check.")
+
+        # Checking frequency devices was set up with
+        verif_checks(
+            comparison_operator="!=",
+            variable='frequency',
+            cut_off=config.PROTOCOL_FREQUENCY,
+            df=summary_df,
+            log=verif_log,
+            text_to_log=f"There are files not initialised at the protocol frequency of {config.PROTOCOL_FREQUENCY} Hz",
+            column_number=3,
+            list_of_headers=['id', 'device', 'frequency'],
+            text_no_error=f"All devices were initialised at the protocol frequency of {config.PROTOCOL_FREQUENCY} Hz."
+        )
+
+
+        # Printing summary statistics of all pwear variables
+        landscape(verif_log)
+        pwear_statistics(log=verif_log, df=summary_df)
+        portrait(verif_log)
 
         # Printing out files with negative values of ENMO_mean
         verif_checks(
@@ -663,12 +954,12 @@ if __name__ == '__main__':
             df=summary_df,
             log=verif_log,
             text_to_log="There are negative values of ENMO_mean in this summary dataset.",
-            column_number=4,
-            list_of_headers=['id', 'enmo_mean', 'Pwear', 'RecordLength'],
-            text_no_error="There are no negative values of ENMO_mean in this summary dataset.")
+            column_number=5,
+            list_of_headers=['id', 'enmo_mean', 'Pwear', 'RecordLength', 'include'],
+            text_no_error="There are no negative values of ENMO_mean in this summary dataset. No IDs to check.")
 
         # Printing out data to look for outliers
-        outliers(summary_df, verif_log, list_variables = ['id', 'enmo_mean'], extra_variable='enmo_0plus', sort='enmo_mean', text_to_log="Look through the data for potential outliers (both smallest and largest)")
+        outliers(summary_df, verif_log, list_variables = ['id', 'enmo_mean', 'Pwear', 'RecordLength'], extra_variable='enmo_0plus', sort='enmo_mean', text_to_log="Look through the data for potential outliers (both smallest and largest values of enmo_mean)")
 
         # Creating pwear difference variables and checking if the quadrants, weekend/wkday is equal to overall pwear
         df = create_pwear_diff(summary_df)
@@ -681,7 +972,7 @@ if __name__ == '__main__':
             text_to_log="The sum of Pwear is not equal to the sum of Pwear for all quadrants. Look through the files below:",
             column_number=3,
             list_of_headers=['id', 'Pwear', 'Pwear_quad_diff'],
-            text_no_error="Pwear = sum of Pwear for all quadrants for all IDs")
+            text_no_error="The Pwear overall sum is equal to the sum of Pwear for all quadrants. No IDs to check.")
         verif_checks(
             comparison_operator=">=",
             variable=['Pwear_wk_wkend_diff', 'Pwear'],
@@ -691,7 +982,7 @@ if __name__ == '__main__':
             text_to_log="The sum of Pwear is not equal to the sum of Pwear for weekend and weekdays. Look through the files below:",
             column_number=3,
             list_of_headers=['id', 'Pwear', 'Pwear_wk_wkend_diff'],
-            text_no_error="Pwear = sum of Pwear weekday + weekend day for all IDs")
+            text_no_error="The sum of Pwear is equal to the sum of Pwear for weekday and weekends. No IDs to check.")
         weekdays = ['wkday', 'wkend']
         for var in weekdays:
             verif_checks(
@@ -703,7 +994,7 @@ if __name__ == '__main__':
                 text_to_log=f"The sum of Pwear_{var} is not equal to the sum of Pwear_{var} for all quadrants. Look through the files below:",
                 column_number=3,
                 list_of_headers=['id', f'Pwear_{var}', f'Pwear_{var}_quads_diff'],
-                text_no_error=f"Pwear_{var} = sum of Pwear_{var} for all quadrants for all IDs")
+                text_no_error=f" The sum of Pwear_{var} is equal to the sum of Pwear_{var} for all quadrants. No IDs to check.")
 
         # Creating difference variables between all thresholds and checking that the total proportion of all categories equals the proportion of time spent above 0mg
         df = proportion_categories(summary_df)
@@ -714,19 +1005,18 @@ if __name__ == '__main__':
                 cut_off=0.0001,
                 df=summary_df,
                 log=verif_log,
-                text_to_log=f"List of sum of {verif_var} proportions does not equal the total proportion. Look through the files below:",
+                text_to_log=f"The sum of {verif_var} proportions does not equal the total proportion. Look through the files below:",
                 column_number=3,
                 list_of_headers=['id', f'{verif_var}_0plus', f'{verif_var}_total_prop'],
-                text_no_error=f"List of sum of {verif_var} proportions is equal to the total proportion for all files.")
+                text_no_error=f"The sum of {verif_var} proportions is equal to the total proportion for all files. No IDs to check.")
 
         # Getting summary statistics for ENMO variables (overall and only on data that meets the inclusion criteria)
-        get_summary_stats(condition_operator="!=", df=summary_df, log=verif_log, variables=['enmo_0plus'], text_to_log="Overall summary statistics for enmo_0plus", text_no_files="No observations to summarize")
-        get_summary_stats(condition_operator="!=", df=summary_df[summary_df['include'] == 1], log=verif_log, variables=['enmo_0plus'], text_to_log="Summary statistics for enmo_0plus where include==1", text_no_files="No observations (include == 1) to summarize")
+        get_summary_stats(condition_operator="!=", df=summary_df, log=verif_log, variables=['enmo_0plus'], text_to_log="Overall summary statistics for enmo_0plus", description="enmo_0plus is the proportion of time spent above >= 0 milli-g. This should be ~1.",
+ text_no_files="No observations to summarize")
+        get_summary_stats(condition_operator="!=", df=summary_df[summary_df['include'] == 1], log=verif_log, variables=['enmo_0plus'], text_to_log="Summary statistics for enmo_0plus where include==1", description="enmo_0plus is the proportion of time spent above >= 0 milli-g. This should be ~1.", text_no_files="No observations (include == 1) to summarize")
         enmo_variables = [col for col in summary_df.columns if col.startswith('enmo_') and col.endswith('plus')]
-        landscape(verif_log)
-        get_summary_stats(condition_operator="!=", df=summary_df, log=verif_log, variables=enmo_variables, text_to_log="Summary statistics for enmo_*plus variables to check for any negative values", text_no_files="No observations to summarize.")
-        portrait(verif_log)
-        get_summary_stats(condition_operator="!=", df=summary_df[summary_df['include'] == 1], log=verif_log, variables=enmo_variables, text_to_log="Summary statistics for enmo_*plus variables where include==1, to check for any negative values ", text_no_files="No observations (include == 1) to summarize")
+        check_negative_values(df=summary_df, log=verif_log, text_to_log="There are negative values in the enmo_*plus variables.", description="Check to see if device has calibrated correctly. \n It is suggested to remove data/file if any negative values are present", variables= enmo_variables, text_no_error="There are no files with negative values in any of the enmo_variables. No files to check.")
+        check_negative_values(df=summary_df[summary_df['include'] == 1], log=verif_log, text_to_log="There are negative values in the enmo_*plus variables (and where include==1).", description="Check to see if device has calibrated correctly. \n It is suggested to remove data/file if any negative values are present", variables= enmo_variables, text_no_error="There are no files with negative values in any of the enmo_variables (and where include == 1). No files to check.")
 
 
     # --- SECTION 2: VERIFICATION OF HOURLY FILE(S) --- #
@@ -741,6 +1031,7 @@ if __name__ == '__main__':
                 (hourly_df['ENMO_mean'] != 1) &
                 (hourly_df['ENMO_mean'] != 0) &
                 (~hourly_df['ENMO_mean'].isnull())].copy(),
+            dups='duplicates_data',
             variables=['timestamp', 'ENMO_mean', 'ENMO_sum', 'Battery_mean'])
 
         verif_checks(
@@ -752,7 +1043,7 @@ if __name__ == '__main__':
             text_to_log="There are duplicates in this hourly dataset. \n Add the duplicate files to the Housekeeping .do file to remove data from final dataset.",
             column_number=4,
             list_of_headers=['file_id', 'timestamp', 'ENMO_mean', 'ENMO_sum', 'Battery_mean'],
-            text_no_error="There are no duplicates in this hourly dataset")
+            text_no_error="There are no duplicated data in this hourly dataset.")
 
         # Comparing ENMO_n and ENMO_0plus * 720. If these are not equal they will be printed to the log.
         df = compare_enmo(
@@ -761,17 +1052,7 @@ if __name__ == '__main__':
             create_var="ENMO_0plus_check",
             var_diff="ENMO_n_0plus_diff",
             text_to_log="Summarising the difference between ENMO_n and ENMO_0plus * 720, if these are not equal to each other",
-            text_no_error="ENMO_n and ENMO_0plus * 720 are equal to each other for all observations")
-
-        # Generating difference between the first file timepoint and DATETIME_ORIG. This can check if the ENMO_n_0plus_diff is due to the last timepoint being part way through an hour
-        diff_enmo(
-            df=hourly_df,
-            var1='first_file_timepoint',
-            var2='last_file_timepoint',
-            var3='DATETIME_ORIG',
-            log=verif_log,
-            text_to_log="Count of hours in hourly file with a difference in enmo_n & enmo_0plus that are NOT due to first or last timepoint in the file:",
-            text_no_error="There are no observations with differences between ENMO_n and ENMO_0plus * 720")
+            text_no_error="ENMO_n and ENMO_0plus * 720 are equal to each other for all observations. No IDs to check.")
 
         # Summarising ENMO_0plus if thresholds are not removes.
         sum_enmo(
@@ -779,39 +1060,19 @@ if __name__ == '__main__':
             df=hourly_df,
             log=verif_log,
             variables=['ENMO_0plus'],
-            text_to_log="Overall summary statistics for enmo_0plus. \n ENMO_0plus should be ~1",
-            text_no_files="No observations to summarize")
+            text_to_log="Overall summary statistics for enmo_0plus.",
+            description="enmo_0plus is the proportion of time spent above >= 0 milli-g. This should be ~1.",
+            text_no_files="No observations to summarize.")
 
-        # Change verification log to landscape mode as next table is large
-        landscape(verif_log)
 
         # Summarising all ENMO variables if thresholds are not removed
-        ENMO_variables = [col for col in hourly_df.columns if col.startswith('ENMO')]
-        sum_enmo(
-            remove_threshold= "No",
-            df=hourly_df[(df['ENMO_mean'] != -1) & (~df['ENMO_mean'].isna())],
-            log=verif_log,
-            variables=ENMO_variables,
-            text_to_log="Summary statistics for all enmo_* variables. \n Check for any negative values",
-            text_no_files="No observations to summarize")
-
-        # Summarising ENMO_mean if thresholds are removed
-        sum_enmo(
-            remove_threshold= "Yes",
-            df=hourly_df[(df['ENMO_mean'] != -1) & (~df['ENMO_mean'].isna())],
-            log=verif_log,
-            variables=['ENMO_mean'],
-            text_to_log="Summary statistics for all ENMO_mean if thresholds removed. \n Check for any negative values",
-            text_no_files="No observations to summarize")
-
-        # Checking if there are any files with ENMO_mean < 0
-        negative_values(df=hourly_df, log=verif_log, variable = 'ENMO_mean', text_to_log="There are negative values of ENMO_mean", list_variables=['file_id', 'ENMO_mean', 'Pwear'], text_no_error="There are no negative values of ENMO_mean")
+        ENMO_variables = [col for col in hourly_df.columns if col.startswith('ENMO_')]
+        check_negative_values(df=hourly_df, log=verif_log, text_to_log="There are negative values in the enmo_*plus variables.", description="Check to see if device has calibrated correctly. \n It is suggested to remove data/file if any negative values are present", variables= ENMO_variables, text_no_error="There are no files with negative values in any of the enmo_variables. No files to check.")
 
         # Printing out data sorted by ENMO mean to look through for potential outliers
-        outliers(df=hourly_df, log=verif_log, list_variables=['file_id', 'DATETIME_ORIG', 'ENMO_mean', 'ENMO_n', 'ENMO_missing', 'ENMO_sum', 'QC_anomalies_total'], extra_variable=None, sort='ENMO_mean', text_to_log="Look through the data for potential outliers (both smallest and largest)")
-
-        # Changing verification log to portrait mode
+        landscape(verif_log)
+        outliers(df=hourly_df, log=verif_log, list_variables=['file_id', 'DATETIME_ORIG', 'ENMO_mean', 'ENMO_n', 'ENMO_missing', 'ENMO_sum', 'QC_anomalies_total', 'FLAG_MECH_NOISE'], extra_variable=None, sort='ENMO_mean', text_to_log="Look through the data for potential outliers (both smallest and largest values of enmo_mean)")
         portrait(verif_log)
 
         # Creating a flag and count how many files have and ENMO_mean above the flag. The flag 600 is chosen after looking at other study data.
-        enmo_flag(df=hourly_df, log=verif_log, flag=600, variable='ENMO_mean')
+        enmo_flag(df=hourly_df, log=verif_log, flag=600, variable='ENMO_mean', description="If any files have an enmo_mean above the flag it would suggest that there is mechanical noise in the data. \n It is suggested to remove this hour from the hourly release file. The hours will be flagged in the release file (FLAG_MECH_NOISE).")
