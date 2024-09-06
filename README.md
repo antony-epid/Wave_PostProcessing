@@ -11,8 +11,9 @@ Follow the reposity [wiki](https://github.com/CAS254/Wave_PostProcessing/wiki) f
 ### Further notes 
 - This process has been developed on Windows. It has NOT been tested for any other operating system type, e.g. macOS.
 - The script has been tested on Python version 3.12. Future versions may be incompatible, although will be tested as they are released.
-- The script has been tested on hourly (h) level data. It has NOT been tested on minute (m) level data. 
-
+- The script has been tested on hourly (h) level data. It has NOT been tested on minute (m) level data.
+- The script has been tested to run on ENMO variables. it has NOT been tested on HPFVM, PITCH, ROLL. With current setup the VARIABLES_TO_DROP in the config file should remain as it is (dropping "HPFVM", "PITCH", "ROLL").
+- The script has been tested to run on hourly level data. It has NOT been tested on minute level data. With current setup the SUB_SET_PREFIXES in the config file should remain as it is (keeping "1h", "metadata").
 
 
 # Downloading and preparing the environment
