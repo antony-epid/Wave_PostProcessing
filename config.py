@@ -18,7 +18,7 @@ from datetime import date
 ########################################################################################################################
 
 # --- OVERALL VARIABLES THAT WORK ACROSS PYTHON FILES --- #
-PROJECT = "TracerXEVO"                          # EDIT: Name of the project going through post processing. Do not use space (replace with _) E.g., study_name
+PROJECT = "example_project_name"                          # EDIT: Name of the project going through post processing. Do not use space (replace with _) E.g., study_name
 REMOVE_THRESHOLDS = 'No'                        # EDIT: Set to 'Yes' if you want to remove ENMO thresholds (Wave produces these automatically. If not needed for study these can be removed). Set to 'No' if you want to keep them.
 PC_TYPE = "WINDOWS"                             # EDIT: Choice of "WINDOWS" or "MAC". Code runs slightly different on windows and mac.
 count_prefixes = "1h"                           # EDIT: Processing resolution. Specify what time resolutions you want. Normally "1h" can also be 1m (1m is not tested)
@@ -26,8 +26,8 @@ PC_DATE = date.today().strftime("%d%b%Y")       # DO NOT EDIT.
 
 
 # --- FOLDERS --- #
-ROOT_FOLDER = 'C:/Users/Cecilie Agegaard/Documents/Cecilie/Wave/Axivity_Data_Processing'            # EDIT: Root folder for the project
-ANALYSIS_FOLDER = '_analysis/Python_WavePostProcessing-master'                                       # EDIT: Where the post-processing .py files are saved
+ROOT_FOLDER = 'example_project_folder'            # EDIT: Root folder for the project
+ANALYSIS_FOLDER = '_analysis/WavePostProcessing-master'                                             # EDIT: Where the post-processing .py files are saved
 RESULTS_FOLDER = '_results'                                                                         # DO NOT EDIT BUT MAKE SURE _results FOLDER EXISTS IN ROOT_FOLDER: Where the wave outputs / results are saved
 RELEASES_FOLDER = '_releases'                                                                       # DO NOT EDIT BUT MAKE SURE _releases FOLDER EXISTS: Where the release files will be saved
 FEEDBACK_FOLDER = '_feedback'                                                                       # DO NOT EDIT BUT MAKE SURE _feedback FOLDER EXISTS: For the csv files used to create the feedback plot
