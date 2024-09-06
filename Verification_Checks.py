@@ -123,8 +123,9 @@ def dataframe(file_name, variable):
     dataframe_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.SUMMARY_FOLDER, f'{file_name}.csv')
     if os.path.exists(dataframe_path):
         df = pd.read_csv(dataframe_path)
-        df = df[(~df[variable].isin(filenames_to_remove))]
         file_exists = True
+        if config.RUN_HOUSEKEEPING == 'Yes':
+            df = df[(~df[variable].isin(filenames_to_remove))]
 
     if not os.path.exists(dataframe_path):
         df = None
