@@ -454,7 +454,7 @@ def verif_checks(comparison_operator, variable, cut_off, df, log, text_to_log, c
             run.bold = True
 
         # Adding the data to the table:
-        filtered_df = summary_df[condition]
+        filtered_df = summary_df.loc[condition]
         for _, row in filtered_df.iterrows():
             row_cells = table.add_row().cells
             for i, header in enumerate(list_of_headers):
@@ -1030,7 +1030,7 @@ if __name__ == '__main__':
             df=hourly_df,
             log=verif_log,
             text_to_log="There are duplicates in this hourly dataset. \n Add the duplicate files to the Housekeeping .do file to remove data from final dataset.",
-            column_number=4,
+            column_number=5,
             list_of_headers=['file_id', 'timestamp', 'ENMO_mean', 'ENMO_sum', 'Battery_mean'],
             text_no_error="There are no duplicated data in this hourly dataset.")
 
