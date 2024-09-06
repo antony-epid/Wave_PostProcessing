@@ -28,7 +28,6 @@ RUN_VERIFICATION_CHECKS = 'Yes'              # Verification code will run some b
 RUN_PREPARE_SUMMARY_RELEASE = 'Yes'          # Prepares summary releases. Will be outputted in the _releases folder together with a data dictionary.
 RUN_PREPARE_DAILY_RELEASE = 'Yes'            # Prepares daily releases. Will be outputted in the _releases folder together with a data dictionary
 RUN_PREPARE_HOURLY_RELEASE = 'Yes'           # Prepares hourly releases. Will be outputted in the _releases folder together with a data dictionary.
-RUN_DATA_QC = 'Yes'                          # Running data QC. QC log will be outputted in the _logs folder.
 
 
 # Running script:
@@ -100,10 +99,6 @@ if __name__ == '__main__':
         print_message("PREPARING A HOURLY RELEASE FILE")
         run_script("Prepare_Hourly_Releases.py")
 
-    # Data QC
-    if RUN_DATA_QC.lower() == 'yes':
-        print_message("RUN THE DATA QC FROM WAVE")
-        run_script("Data_QC.py")
 
     print_message(Fore.BLUE + "The Wave Post Processing code has finished running successfully. \n If ran in PyCharm you can now close PyCharm. \n If ran as batch file: Press Enter to close the script." + Fore.RESET)
 

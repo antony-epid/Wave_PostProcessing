@@ -1,20 +1,19 @@
 ############################################################################################################
 # Verification of SUMMARY_MEANS and part_processed hourly files
 # Author: CAS
-# Date: 15/08/2024
-# Version: 1.1 Edited to output verification checks in word document rather than in excel woork book as in version 1.0
+# Date: 05/09/2024
+# Version: 1.2
+# 1.2 Verification check merged together with data QC checks.
+# 1.1 Edited to output verification checks in word document rather than in excel work book as in version 1.0
 ############################################################################################################
 # IMPORTING PACKAGES #
 import docx
-
 import config
 import os
 import pandas as pd
 from docx.shared import RGBColor
 import operator
 from docx.enum.section import WD_ORIENTATION, WD_SECTION
-
-from Data_QC import information_to_qc_log
 
 
 # --- Creating verification log --- #
@@ -748,6 +747,7 @@ def diff_enmo(df, var1, var2, var3, log, text_to_log, text_no_error):
         save_verif_log(log)
 
 
+# --- Summarising enmo variables --- #
 def sum_enmo(remove_threshold, df, log, variables, text_to_log, description, text_no_files):
     """
     Summarising ENMO variables and printing to log
@@ -778,38 +778,8 @@ def sum_enmo(remove_threshold, df, log, variables, text_to_log, description, tex
         log.add_paragraph("\n")
         save_verif_log(log)
 
-
-# --- SUMMARISING ENMO_MEAN TO CHECK FOR ANY NEGATIVE VALUES --- #
-def negative_values(df, log, text_to_log, variable, list_variables, text_no_error):
-
-    minimum = df[variable].min()
-    if minimum < 0:
-        add_text(log, text_to_log, 255, 0, 0)
-        table = log.add_table(rows=1, cols=3)
-        table.style = 'Table Grid'
-
-        # Defining the row headers
-        hdr_cells = table.rows[0].cells
-        for i, var in enumerate(list_variables):
-            run = hdr_cells[i].paragraphs[0].add_run(var)
-            run.bold = True
-
-        # Adding data to table
-        for index, row_data in df.iterrows():
-            row_cells = table.add_row().cells
-            for i, var in enumerate(list_variables):
-                row_cells[i].text = str(row_data[var])
-
-    # Printing text to log if "if" condition not met
-    else:
-        add_text_no_error(log, text_no_error)
-
-    log.add_paragraph("\n")
-    save_verif_log(log)
-
-
 # --- CREATING ENMO_MEAN FLAG TO PICK OUT FILES FOR CHECKING --- #
-def enmo_flag(df, log, flag, variable, description):
+def enmo_flag(df, log, flag, variable, description, table_variables):
     """Counting how many files have an ENMO_mean above a specified flag
     :param df: Dataframe with the files.
     :param log: The verification log where the count it printed to.
@@ -817,10 +787,26 @@ def enmo_flag(df, log, flag, variable, description):
     :param variable: ENMO_mean
     :return: None
     """
-
     count = df[(df[variable] > flag) & (~df[variable].isna()) & (df['QC_anomalies_total'] == 0)].shape[0]
     add_text(log, text_to_log=f"Number of files with {variable} > {variable}_flag ({flag}) \n Count: {count}", x=0, y=0, z=0)
     add_description_text(log, description, 0, 0, 0)
+
+    if count > 0:
+        filtered_df = df[df[variable]>flag].sort_values(by=variable)
+        table = log.add_table(rows=1, cols=len(table_variables))
+        table.style = 'Table Grid'
+
+        hdr_cells = table.rows[0].cells
+        for i, var in enumerate(table_variables):
+            run = hdr_cells[i].paragraphs[0].add_run(var)
+            run.bold = True
+
+        # Adding data to table
+        for index, row_data in filtered_df.iterrows():
+            row_cells = table.add_row().cells
+            for i, var in enumerate(table_variables):
+                row_cells[i].text = str(row_data[var])
+
     save_verif_log(log)
 
 
@@ -1075,4 +1061,10 @@ if __name__ == '__main__':
         portrait(verif_log)
 
         # Creating a flag and count how many files have and ENMO_mean above the flag. The flag 600 is chosen after looking at other study data.
-        enmo_flag(df=hourly_df, log=verif_log, flag=600, variable='ENMO_mean', description="If any files have an enmo_mean above the flag it would suggest that there is mechanical noise in the data. \n It is suggested to remove this hour from the hourly release file. The hours will be flagged in the release file (FLAG_MECH_NOISE).")
+        enmo_flag(
+            df=hourly_df,
+            log=verif_log,
+            flag=600,
+            variable='ENMO_mean',
+            description="If any hours have an enmo_mean above the flag it would suggest that there is mechanical noise in the data. \n It is suggested to remove this hour from the hourly release file. The hours will be flagged in the release file (FLAG_MECH_NOISE=1).",
+            table_variables = ['id', 'dayofweek', 'hourofday', 'ENMO_mean'])
