@@ -26,7 +26,7 @@ PC_DATE = date.today().strftime("%d%b%Y")       # DO NOT EDIT.
 
 
 # --- FOLDERS --- #
-ROOT_FOLDER = 'example_project_folder'            # EDIT: Root folder for the project
+ROOT_FOLDER = 'example_project_folder_path'            # EDIT: Root folder for the project
 ANALYSIS_FOLDER = '_analysis/WavePostProcessing-master'                                             # EDIT: Where the post-processing .py files are saved
 RESULTS_FOLDER = '_results'                                                                         # DO NOT EDIT BUT MAKE SURE _results FOLDER EXISTS IN ROOT_FOLDER: Where the wave outputs / results are saved
 RELEASES_FOLDER = '_releases'                                                                       # DO NOT EDIT BUT MAKE SURE _releases FOLDER EXISTS: Where the release files will be saved
