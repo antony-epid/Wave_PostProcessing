@@ -188,7 +188,7 @@ def creating_headers(files_list):
                              'enmo_700plus', 'enmo_800plus', 'enmo_900plus', 'enmo_1000plus', 'enmo_2000plus', 'enmo_3000plus', 'enmo_4000plus',
                              'device', 'file_start_error', 'file_end_error', 'calibration_method', 'noise_cutoff', 'processing_epoch',
                              'generic_first_timestamp', 'generic_last_timestamp', 'qc_first_battery_pct', 'qc_last_battery_pct', 'frequency', 'TIME_RESOLUTION', 'qc_anomalies_total',
-                             'qc_anomaly_a', 'qc_anomaly_b', 'qc_anomaly_c', 'qc_anomaly_d', 'qc_anomaly_e', 'qc_anomaly_f', 'qc_anomaly_g']
+                             'qc_anomaly_a', 'qc_anomaly_b', 'qc_anomaly_c', 'qc_anomaly_d', 'qc_anomaly_e', 'qc_anomaly_f', 'qc_anomaly_g', 'FLAG_MECH_NOISE']
         headers_df = pd.DataFrame(columns=list_of_variables)
         summary_dataframes.append(headers_df)
 
@@ -245,6 +245,7 @@ def summarise_variables(files_list, trimmed_dfs, time_resolutions, summary_dataf
         qc_anomaly_e_value = first_row_data['QC_anomaly_E']
         qc_anomaly_f_value = first_row_data['QC_anomaly_F']
         qc_anomaly_g_value = first_row_data['QC_anomaly_G']
+        flag_mech_noise = first_row_data['FLAG_MECH_NOISE']
 
         # Adding the summary variables to the empty dataframe
         summary_dict = {
@@ -269,7 +270,8 @@ def summarise_variables(files_list, trimmed_dfs, time_resolutions, summary_dataf
             'qc_anomaly_f': qc_anomaly_f_value,
             'qc_anomaly_g': qc_anomaly_g_value,
             'calibration_method': calibration_method_value,
-            'TIME_RESOLUTION': time_resolution
+            'TIME_RESOLUTION': time_resolution,
+            'FLAG_MECH_NOISE': flag_mech_noise
         }
 
         ##################################

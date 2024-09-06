@@ -163,7 +163,7 @@ def creating_headers(files_list):
                              'enmo_240plus', 'enmo_250plus', 'enmo_260plus', 'enmo_270plus', 'enmo_280plus', 'enmo_290plus', 'enmo_300plus', 'enmo_400plus', 'enmo_500plus', 'enmo_600plus',
                              'enmo_700plus', 'enmo_800plus', 'enmo_900plus', 'enmo_1000plus', 'enmo_2000plus', 'enmo_3000plus', 'enmo_4000plus',
                              'device', 'file_start_error', 'file_end_error', 'calibration_method', 'noise_cutoff', 'processing_epoch',
-                             'TIME_RESOLUTION', 'qc_anomalies_total']
+                             'TIME_RESOLUTION', 'qc_anomalies_total', 'FLAG_MECH_NOISE']
         headers_df = pd.DataFrame(columns=list_of_variables)
         summary_dataframes.append(headers_df)
 
@@ -201,6 +201,7 @@ def summarise_variables(files_list, trimmed_dfs, time_resolutions, summary_dataf
                 file_start_error_value = first_row_data['start_error']
                 calibration_method_value = first_row_data['calibration_method']
                 qc_anomalies_total_value = first_row_data['QC_anomalies_total']
+                flag_mech_noise = first_row_data['FLAG_MECH_NOISE']
 
                 summary_dict = {
                     'id': file_id_value,
