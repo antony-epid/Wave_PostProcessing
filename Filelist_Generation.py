@@ -8,6 +8,7 @@
 import os
 import pandas as pd
 import config
+from colorama import Fore
 
 # --- CREATING SPECIFIC FOLDERS WITHIN THE RESULTS FOLDER FOR HOUSING INDIVIDUAL FILES --- #
 def create_folders():
@@ -118,15 +119,21 @@ def remove_files():
                 last_process_df = pd.read_csv(summary_file_path)
                 last_process_df = last_process_df.filter(items=['id'])
                 last_process_df = last_process_df.drop_duplicates(subset=['id'], keep='first')
+                last_process_df = last_process_df.rename(columns={'id': 'filename_temp'})
 
                 # Merging with new files and only keeping the ones, that haven't been processed previously
-                merged_df = pd.merge(filelist_df, last_process_df, on='id', how="outer", indicator=True)
+                merged_df = pd.merge(filelist_df, last_process_df, on='filename_temp', how="outer", indicator=True)
                 index_merged = merged_df[(merged_df['_merge'] == 'both')].index
                 merged_df.drop(index_merged, inplace=True)
                 merged_df = merged_df.drop(columns=['_merge', 'id'])
                 filelist_df = merged_df.copy()
         except FileNotFoundError:
             pass
+
+    new_files_to_proces = len(filelist_df)
+    if new_files_to_proces < 1:
+        print(Fore.RED + "There are no new files to post process. \n Make sure that files processed through wave are saved in the _results folder before re-running the post processing.")
+        input("If run in PyCharm: Stop the script from running by clicking the red stop button at the right hand top corner. \n If run at batch file: Close the window and rerun when new files have been saved in _results folder." + Fore.RESET)
 
     filelist_df['serial'] = filelist_df.groupby('filename_temp').ngroup() + 1
     filelist_df.sort_values(by='serial', inplace=True)
