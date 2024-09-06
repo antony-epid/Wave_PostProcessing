@@ -5,9 +5,9 @@
 # Version: 1.0 Translated from Stata code
 ############################################################################################################
 
-# --- IDs that should be removed from data releases --- #
-# Add id's that should be removed from final releases. Add a comma after the previous id and enter the new id in ''
-ids_to_remove = [
+# --- Filenames that should be removed from data releases --- #
+# Add filenames that should be removed from final releases. Add a comma after the previous filename and enter the new filename in ''
+filenames_to_remove = [
     'example1',
     'example2'
 ]

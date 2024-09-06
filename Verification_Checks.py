@@ -14,6 +14,7 @@ import pandas as pd
 from docx.shared import RGBColor
 import operator
 from docx.enum.section import WD_ORIENTATION, WD_SECTION
+from Housekeeping import filenames_to_remove
 
 
 # --- Creating verification log --- #
@@ -112,7 +113,7 @@ def portrait(log):
     new_section.page_width, new_section.page_height = new_section.page_height, new_section.page_width
 
 # --- CHECKING IF DATASET EXISTS AND THEN READING IT IN --- #
-def dataframe(file_name):
+def dataframe(file_name, variable):
     """
     Importing dataset as dataframe and creating a flag if the dataset doesn't exist.
     :param file_name: The dataset to import.
@@ -122,6 +123,7 @@ def dataframe(file_name):
     dataframe_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.SUMMARY_FOLDER, f'{file_name}.csv')
     if os.path.exists(dataframe_path):
         df = pd.read_csv(dataframe_path)
+        df = df[(~df[variable].isin(filenames_to_remove))]
         file_exists = True
 
     if not os.path.exists(dataframe_path):
@@ -816,7 +818,7 @@ if __name__ == '__main__':
     # --- SECTION 1: VERIFICATION OF OUTPUT SUMMARY OVERALL MEANS --- #
     # Creating verification log and importing summary dataframe
     verif_log = create_verif_log("VERIFICATION OF OUTPUT SUMMARY OVERALL MEANS")
-    summary_df, summary_file_exists = dataframe(file_name=config.SUM_OUTPUT_FILE)
+    summary_df, summary_file_exists = dataframe(file_name=config.SUM_OUTPUT_FILE, variable='id')
 
     # If dataframe exists, print out files processed, devices used and summary of start dates
     if summary_file_exists:
@@ -1007,7 +1009,7 @@ if __name__ == '__main__':
 
     # --- SECTION 2: VERIFICATION OF HOURLY FILE(S) --- #
     # Importing hourly dataframe
-    hourly_df, hourly_file_exists = dataframe(file_name=config.HOUR_OUTPUT_FILE)
+    hourly_df, hourly_file_exists = dataframe(file_name=config.HOUR_OUTPUT_FILE, variable='file_id')
     add_header(log_header="VERIFICATION OF HOURLY FILES")
 
     # If dataframe exists, tag duplicates and print to log if there are any

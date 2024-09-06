@@ -10,7 +10,7 @@ import config
 import pandas as pd
 from colorama import Fore
 from datetime import date
-from Housekeeping import ids_to_remove
+from Housekeeping import filenames_to_remove
 
 
 ######################################################
@@ -45,7 +45,7 @@ def formatting_daily_file():
     # --- SECTION TO RUN HOUSEKEEPING AND DROP FILES NOT NEEDED IN FINAL RELEASE --- #
     if config.RUN_HOUSEKEEPING == 'Yes':
         print(Fore.GREEN + "RUNNING HOUSEKEEPING AND DROPPING FILES THAT ARE NOT NEEDED IN FINAL RELEASE" + Fore.RESET)
-        daily_df = daily_df[(~daily_df['id'].isin(ids_to_remove)) & (~daily_df['id'].isin(ids_to_remove))]
+        daily_df = daily_df[(~daily_df['filename'].isin(filenames_to_remove))]
 
     # Counting number of files/IDs and print the IDs
     count_number_ids = daily_df['id'].count()
