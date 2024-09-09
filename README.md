@@ -1,7 +1,7 @@
 # Introduction
 Wave Post Processing is a python project that can post process the output of accelerometery data that has been processed through Wave. The Wave Post Processing project can be run either through PyCharm or through a batch file. Follow the user guides on how to setup, prepare and run the project with the two different approaches.
 
-Follow the reposity [wiki](https://github.com/CAS254/Wave_PostProcessing/wiki) for detailed user guide on how to set up and run the script. 
+Follow the repository [wiki](https://github.com/CAS254/Wave_PostProcessing/wiki) for detailed user guide on how to set up and run the script. 
 
 # Prerequisites
 - Output from accelerometer files that have been processed through Wave.
@@ -11,9 +11,9 @@ Follow the reposity [wiki](https://github.com/CAS254/Wave_PostProcessing/wiki) f
 ### Further notes 
 - This process has been developed on Windows. It has NOT been tested for any other operating system type, e.g. macOS.
 - The script has been tested on Python version 3.12. Future versions may be incompatible, although will be tested as they are released.
-- The script has been tested on hourly (h) level data. It has NOT been tested on minute (m) level data.
-- The script has been tested to run on ENMO variables. it has NOT been tested on HPFVM, PITCH, ROLL. With current setup the VARIABLES_TO_DROP in the config file should remain as it is (dropping "HPFVM", "PITCH", "ROLL").
-- The script has been tested to run on hourly level data. It has NOT been tested on minute level data. With current setup the SUB_SET_PREFIXES in the config file should remain as it is (keeping "1h", "metadata").
+- The script has been tested on hourly (h) level data. It has NOT been tested on minute (m) level data. With current setup the SUB_SET_PREFIXES in the config file should remain as it is (keeping "1h", "metadata").
+- The script has been tested to run on ENMO variables. It has NOT been tested on HPFVM, PITCH, ROLL. With current setup the VARIABLES_TO_DROP in the config file should remain as it is (dropping "HPFVM", "PITCH", "ROLL").
+
 
 
 # Downloading and preparing the environment
@@ -34,7 +34,7 @@ The accelerometer files should be saved in the _data folder and the output from 
 3. Extract the ZIP file into the _analysis folder. Ensure it extracts to a single level of subfolders.
 
 ### Install dependencies
-Certain python modules are needed to be able to run the code. A requirements.txt  it saved within the ZIP file that was downloaded when downloading the code. This text file contains all requirements needed to be able to run the code. See the User Guides on [GitHub wiki](https://github.com/CAS254/Wave_PostProcessing/wiki) for detailed guide on how to install the depencies.
+Certain python modules are needed to be able to run the code. A requirements.txt  it saved within the ZIP file that was downloaded when downloading the code. This text file contains all requirements needed to be able to run the code. See the User Guides on [GitHub wiki](https://github.com/CAS254/Wave_PostProcessing/wiki) for detailed guide on how to install the dependencies.
 
 # Preparing script to run
 For a description of the different part of the Wave Post Processing script see [Explanation of code](https://github.com/CAS254/Wave_PostProcessing/wiki/2.-Explanation-of-code). 
