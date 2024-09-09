@@ -126,7 +126,7 @@ def data_dictionary(hourly_df):
         "qc_anomaly_g": "1 = Anomaly g flagged in file. Dealt with during processing",
         "first_file_timepoint": "First date timestamp of hdf5 file",
         "last_file_timepoint": "Last date timestamp of hdf5 file",
-        "FLAG_MECH_NOISE": "1 = Flagged as mechanical enmo values. Pwear set to 0"
+        "FLAG_MECH_NOISE": "1 = Flagged as mechanical enmo values. Pwear set to 0."
         }
 
     variable_label.update(calibration_labels)
