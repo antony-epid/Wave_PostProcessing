@@ -99,7 +99,10 @@ VER_PWEAR_MORN = 9                                  # DO NOT EDIT: The minimum h
 VER_PWEAR_QUAD = 9                                  # DO NOT EDIT: The minimum hours of wear needed within each of noon, afternoon and night quadrants to be included (on summary data). Will be outputted to verification log if less.
 
 VERIF_NAME = 'Verification_Log'                     # DO NOT EDIT: Name of the verification log to be outputted in the _results folder. Edit if you wish a different name.
-VERIFY_VARS = ['enmo']                              # EDIT: Variables used in verification, e.g. ['enmo', 'hpfvm']
+VERIFY_VARS = ['enmo']                              # DO NOT EDIT: Variables used in verification, e.g. ['enmo', 'hpfvm']. Only tested on ENMO variables.
+
+MIN_INCLUSION_HRS = 96                              # EDIT: Minimum number of hours recorded --> If below this it will be flagged as device stopped recording early
+PROTOCOL_FREQUENCY = 100                            # EDIT: Frequency the devices are set up to record data at for the study/ project. Keep as 100 if device is recording at 100 hz.
 
 
 # --- PREPARING SUMMARY/HOURLY/DAILY RELEASES -- #
@@ -113,10 +116,3 @@ SUM_PWEAR_QUAD = 9                                  # EDIT: Minumum number of ho
 DAY_PWEAR = 12                                      # EDIT: Minimum number of hours to signify each day contains enough data to be included in final release.
 DAY_PWEAR_MORNING = 3                               # EDIT: Minimum number of hours needed each day within morning quadrant to show monitor worn overnight
 DAY_PWEAR_QUAD = 3                                  # EDIT: Minumum number of hours needed each day within each of noon, afternoon and night quadrant to be included in final release.
-
-
-# --- FULL QC OF DATA --- #
-# In the variables below you edit if you want a different name of the QC data log and if you want a different minimum criteria for the file length and if the device used is setup to a different recording frequency than 100 hz
-DATA_QC_LOG = f'Data_QC_log_{PC_DATE}'              # DO NOT EDIT: Name of the data QC log to be outputted in the _results folder. Edit if you wish a different name.
-MIN_INCLUSION_HRS = 96                              # EDIT: Minimum number of hours recorded --> If below this it will be flagged as device stopped recording early
-PROTOCOL_FREQUENCY = 100                            # EDIT: Frequency the devices are set up to record data at for the study/ project. Keep as 100 if device is recording at 100 hz.
