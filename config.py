@@ -21,13 +21,13 @@ from datetime import date
 PROJECT = "example_project_name"                          # EDIT: Name of the project going through post processing. Do not use space (replace with _) E.g., study_name
 REMOVE_THRESHOLDS = 'No'                        # EDIT: Set to 'Yes' if you want to remove ENMO thresholds (Wave produces these automatically. If not needed for study these can be removed). Set to 'No' if you want to keep them.
 PC_TYPE = "WINDOWS"                             # EDIT: Choice of "WINDOWS" or "MAC". Code runs slightly different on windows and mac.
-count_prefixes = "1h"                           # EDIT: Processing resolution. Specify what time resolutions you want. Normally "1h" can also be 1m (1m is not tested)
+count_prefixes = "1h"                           # DO NOT EDIT: Processing resolution. Specify what time resolutions you want. Normally "1h" (1m is not tested)
 PC_DATE = date.today().strftime("%d%b%Y")       # DO NOT EDIT.
 
 
 # --- FOLDERS --- #
-ROOT_FOLDER = 'example_project_folder_path'            # EDIT: Root folder for the project
-ANALYSIS_FOLDER = '_analysis/WavePostProcessing-master'                                             # EDIT: Where the post-processing .py files are saved
+ROOT_FOLDER = 'example_file_path_project_folder'                                                    # EDIT: Root folder for the project
+ANALYSIS_FOLDER = '_analysis/Wave_PostProcessing-master'                                            # EDIT: Where the post-processing .py files are saved
 RESULTS_FOLDER = '_results'                                                                         # DO NOT EDIT BUT MAKE SURE _results FOLDER EXISTS IN ROOT_FOLDER: Where the wave outputs / results are saved
 RELEASES_FOLDER = '_releases'                                                                       # DO NOT EDIT BUT MAKE SURE _releases FOLDER EXISTS: Where the release files will be saved
 FEEDBACK_FOLDER = '_feedback'                                                                       # DO NOT EDIT BUT MAKE SURE _feedback FOLDER EXISTS: For the csv files used to create the feedback plot
@@ -52,13 +52,13 @@ RUN_HOUSEKEEPING = 'Yes'        # EDIT: Set to 'Yes' if you have housekeeping sc
 
 # --- FILELIST GENERATION ADDITIONAL VARIABLES --- #
 # EDIT: Variables below can be adapted depending on the Wave output. Can also be changed if wanting to post process all files again or just newly added files.
-SUB_SET_PREFIXES = ['1h', 'metadata']               # EDIT: File resolution and meta files to look for when creating filelist. (Add each in the format ['1h', '1m', 'metadata'])
-ONLY_NEW_FILES = 'No'                               # EDIT: Set to 'No' if you want to process all files. If running a dataset as continue processing throughout the study can be set to "Yes" so only new files are processed.
+SUB_SET_PREFIXES = ['1h', 'metadata']                # DO NOT EDIT: File resolution and meta files to look for when creating filelist. (Add each in the format ['1h', 'metadata']). Not tested on minute level data.
+ONLY_NEW_FILES = 'Yes'                               # EDIT: Set to 'No' if you want to process all files. If running a dataset as continue processing throughout the study can be set to "Yes" so only new files are processed.
 
 
 # --- GENERIC EXH POSTPROCESSING ADDITIONAL VARIABLES --- #
 # EDIT: Variables below can be adapted if you want to specify other variables to drop and if you wish to adjust for daylight saving times.
-VARIABLES_TO_DROP = ["HPFVM", "PITCH", "ROLL"]      # EDIT: Specify what variables to drop (Normally this will be ["HPFVM", "PITCH", "ROLL"])
+VARIABLES_TO_DROP = ["HPFVM", "PITCH", "ROLL"]      # DO NOT EDIT: Specify what variables to drop (Normally this will be ["HPFVM", "PITCH", "ROLL"]). Not tested to run on HPFVM, PITCH and ROLL yet.
 CLOCK_CHANGES = 'Yes'                               # EDIT: If set 'Yes' it will adjust data for daylight savings. Swith to 'No' if in a country without clock changes
 TIMEZONE = 'Europe/London'                          # EDIT: Change to the timezone data is collected in. To find correct name for timezone, in google type "pytz timezone" followed by the country (Or see list herehttps://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568)
 # DO NOT EDIT: Variables below do not need editing if you are happy with the standard file naming output.
