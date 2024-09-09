@@ -53,9 +53,12 @@ def formatting_daily_file():
     filename_column = daily_df['filename']
     filename_list = filename_column.tolist()
     unique_filename = sorted(set(filename_list))
+
+    grouped = daily_df.groupby('filename')['day_number'].count()
     print(Fore.YELLOW + "Filenames:" + Fore.RESET)
     for filename in unique_filename:
-        print(Fore.YELLOW + filename + Fore.RESET)
+        count_days = grouped.get(filename, 0)
+        print(Fore.YELLOW + f'{filename}:    {count_days} days' + Fore.RESET)
 
 
     # Saving the release file with todays date

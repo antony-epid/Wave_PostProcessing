@@ -62,7 +62,7 @@ def formatting_hourly_file():
     id_counts = hourly_df['id'].value_counts().sort_index()
     print(Fore.YELLOW + "IDs and number of files per ID:" + Fore.RESET)
     for id, count in zip(unique_ids, id_counts):
-        print(Fore.YELLOW + f'{id:} {count}' + Fore.RESET)
+        print(Fore.YELLOW + f'{id:}   {count} files/hours' + Fore.RESET)
 
     # Saving the release file with todays date
     today_date = date.today()
