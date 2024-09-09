@@ -224,8 +224,8 @@ def include_criteria(log, df, text_to_log, description):
         row_cells = table.add_row().cells
         row_cells[0].text = str(idx)
         row_cells[1].text = str(value)
-        row_cells[2].text = f"{include_percent[idx]}"
-        row_cells[3].text = f"{include_cum_percent[idx]}"
+        row_cells[2].text = f"{round(include_percent[idx])}"
+        row_cells[3].text = f"{round(include_cum_percent[idx])}"
 
     total_frequency = include_freq.sum()
     total_percent = include_percent.sum()
@@ -454,7 +454,7 @@ def verif_checks(comparison_operator, variable, cut_off, df, log, text_to_log, c
             run.bold = True
 
         # Adding the data to the table:
-        filtered_df = summary_df.loc[condition]
+        filtered_df = df.loc[condition]
         for _, row in filtered_df.iterrows():
             row_cells = table.add_row().cells
             for i, header in enumerate(list_of_headers):
@@ -1015,24 +1015,6 @@ if __name__ == '__main__':
 
     # If dataframe exists, tag duplicates and print to log if there are any
     if hourly_file_exists:
-        hourly_df = tagging_duplicates(
-            df=hourly_df[
-                (hourly_df['ENMO_mean'] != 1) &
-                (hourly_df['ENMO_mean'] != 0) &
-                (~hourly_df['ENMO_mean'].isnull())].copy(),
-            dups='duplicates_data',
-            variables=['timestamp', 'ENMO_mean', 'ENMO_sum', 'Battery_mean'])
-
-        verif_checks(
-            comparison_operator="!=",
-            variable="duplicates_data",
-            cut_off=0,
-            df=hourly_df,
-            log=verif_log,
-            text_to_log="There are duplicates in this hourly dataset. \n Add the duplicate files to the Housekeeping .do file to remove data from final dataset.",
-            column_number=5,
-            list_of_headers=['file_id', 'timestamp', 'ENMO_mean', 'ENMO_sum', 'Battery_mean'],
-            text_no_error="There are no duplicated data in this hourly dataset.")
 
         # Comparing ENMO_n and ENMO_0plus * 720. If these are not equal they will be printed to the log.
         df = compare_enmo(
@@ -1055,7 +1037,7 @@ if __name__ == '__main__':
 
 
         # Summarising all ENMO variables if thresholds are not removed
-        ENMO_variables = [col for col in hourly_df.columns if col.startswith('ENMO_')]
+        ENMO_variables = [col for col in hourly_df.columns if col.startswith('ENMO_') and col.endswith('plus')]
         check_negative_values(df=hourly_df, log=verif_log, text_to_log="There are negative values in the enmo_*plus variables.", description="Check to see if device has calibrated correctly. \n It is suggested to remove data/file if any negative values are present", variables= ENMO_variables, text_no_error="There are no files with negative values in any of the enmo_variables. No files to check.")
 
         # Printing out data sorted by ENMO mean to look through for potential outliers
