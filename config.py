@@ -18,7 +18,7 @@ from datetime import date
 ########################################################################################################################
 
 # --- OVERALL VARIABLES THAT WORK ACROSS PYTHON FILES --- #
-PROJECT = "example_project_name"                          # EDIT: Name of the project going through post processing. Do not use space (replace with _) E.g., study_name
+PROJECT = "example_project_name"                # EDIT: Name of the project going through post processing. Do not use space (replace with _) E.g., study_name
 REMOVE_THRESHOLDS = 'No'                        # EDIT: Set to 'Yes' if you want to remove ENMO thresholds (Wave produces these automatically. If not needed for study these can be removed). Set to 'No' if you want to keep them.
 PC_TYPE = "WINDOWS"                             # EDIT: Choice of "WINDOWS" or "MAC". Code runs slightly different on windows and mac.
 count_prefixes = "1h"                           # DO NOT EDIT: Processing resolution. Specify what time resolutions you want. Normally "1h" (1m is not tested)

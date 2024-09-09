@@ -139,7 +139,6 @@ def merging_data(files_list, metadata_dfs, datafiles_dfs):
                 print("Date and time variables have been adjusted for clock changes.")
 
             else:
-                print("No clock changes")
                 pass
         merged_df.drop(columns=['DATETIME_COPY', 'BST'], inplace=True)
 
@@ -223,7 +222,6 @@ def pwear_variables(valid_dfs, time_resolutions):
         variables_to_check = ["HPFVM", "PITCH", "ROLL", 'ENMO_mean']
         for var in variables_to_check:
             if var in valid_df.columns:
-                print(f"Processing variables: {var}")
                 valid_df.loc[valid_df['ENMO_n'] == 0, var] = None
 
 

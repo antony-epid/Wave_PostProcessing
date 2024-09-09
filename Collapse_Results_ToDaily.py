@@ -11,6 +11,7 @@ import config
 from datetime import timedelta
 import numpy as np
 import statsmodels.api as sm
+import warnings
 
 ##################
 # Processing #
@@ -276,7 +277,10 @@ def summarise_variables(files_list, trimmed_dfs, time_resolutions, summary_dataf
                             column_name = column_name.lower()
                             summary_dict[column_name] = results.params['const']
 
-                summary_df = pd.concat([summary_df, pd.DataFrame([summary_dict])], ignore_index=True)
+                # In future pandas might filter out any rows with only NaN data. This turns of a warning message about this. Code will need editing in the future.
+                with warnings.catch_warnings():
+                    warnings.simplefilter(action='ignore', category=FutureWarning)
+                    summary_df = pd.concat([summary_df, pd.DataFrame([summary_dict])], ignore_index=True)
 
         # Rounding all numeric columns to 4 decimal places
         numeric_columns = summary_df.select_dtypes(include=['float64', 'float32']).columns
