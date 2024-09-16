@@ -137,10 +137,10 @@ def merging_data(files_list, metadata_dfs, datafiles_dfs):
                     merged_df.at[idx, 'DATETIME'] += timedelta(hours=adjustment)
                     prev_bst = curr_bst
                 print("Date and time variables have been adjusted for clock changes.")
+                merged_df.drop(columns=['DATETIME_COPY', 'BST'], inplace=True)
 
             else:
                 pass
-        merged_df.drop(columns=['DATETIME_COPY', 'BST'], inplace=True)
 
         # Calculating DATE and TIME variables with new time
         merged_df['DATE'] = pd.to_datetime(merged_df['DATETIME']).dt.date
