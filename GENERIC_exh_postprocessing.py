@@ -104,7 +104,7 @@ def merging_data(files_list, metadata_dfs, datafiles_dfs):
         # Generating DATETIME variable and correcting for daylight saving. For no clock change this time stays the same as DATETIME_ORIG
         merged_df['DATETIME'] = merged_df['DATETIME_ORIG']
 
-        if config.CLOCK_CHANGES == 'Yes':
+        if config.CLOCK_CHANGES.lower() == 'yes':
             merged_df['DATETIME_COPY'] = merged_df['DATETIME']
 
             #Retrieving timezone information and converting datetime_copy variable to specified timezone

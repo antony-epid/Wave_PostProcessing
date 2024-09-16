@@ -26,9 +26,9 @@ def create_filelist():
     # CREATING NEW FILELIST IN INDIVIDUAL SUMMARY FOLDER - CODE IS DIFFERENT FOR MAC AND WINDOWS, CHANGE PC TYPE IN THE BEGINNING OF SCRIPT
     os.chdir(SUMMARY_FOLDER_PATH)
 
-    if config.PC_TYPE == "WINDOWS":
+    if config.PC_TYPE.lower() == "windows":
         os.system('dir /b *csv > filelist.txt')
-    elif config.PC_TYPE == "MAC":
+    elif config.PC_TYPE.lower() == "mac":
         os.system('ls /b *csv > filelist.txt')
 
 # REMOVING FILES THAT SHOULD NOT BE APPENDED #
@@ -66,7 +66,7 @@ def appending_files(files_list):
     appended_df = appended_df.dropna(subset=['id'])
 
     # REMOVING THRESHOLDS FROM THE MAIN OUTPUT FILE IF THIS IS SPECIFIED IN CONFIG FILE
-    if config.REMOVE_THRESHOLDS == 'Yes':
+    if config.REMOVE_THRESHOLDS.lower() == 'yes':
         variable_prefix = 'enmo_'
         variable_suffix = 'plus'
 

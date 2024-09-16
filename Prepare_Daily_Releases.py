@@ -43,7 +43,7 @@ def formatting_daily_file():
     daily_df = daily_df[columns]
 
     # --- SECTION TO RUN HOUSEKEEPING AND DROP FILES NOT NEEDED IN FINAL RELEASE --- #
-    if config.RUN_HOUSEKEEPING == 'Yes':
+    if config.RUN_HOUSEKEEPING.lower() == 'yes':
         print(Fore.GREEN + "RUNNING HOUSEKEEPING AND DROPPING FILES THAT ARE NOT NEEDED IN FINAL RELEASE" + Fore.RESET)
         daily_df = daily_df[(~daily_df['filename'].isin(filenames_to_remove))]
 
@@ -100,7 +100,7 @@ def data_dictionary(daily_df):
 
     variable_label.update(pwear_labels)
 
-    if config.REMOVE_THRESHOLDS == 'No':
+    if config.REMOVE_THRESHOLDS.lower() == 'no':
         enmo_variables = [col for col in daily_df.columns if col.startswith("enmo_") and col.endswith("plus")]
 
         for variables in enmo_variables:

@@ -50,9 +50,9 @@ def create_filelist():
 
     # Creating a new filelist in the results folder (The code is different for mac and windows, change pc type in the beginning of script)
     os.chdir(os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER))
-    if config.PC_TYPE == "WINDOWS":
+    if config.PC_TYPE.lower() == "windows":
         os.system('dir /b *csv > filelist.txt')
-    elif config.PC_TYPE == "MAC":
+    elif config.PC_TYPE.lower() == "mac":
         os.system('ls /b *csv > filelist.txt')
 
 
@@ -110,7 +110,7 @@ def remove_files():
     filelist_df['id'] = filelist_df['filename_temp'].str.split('_').str[0]
 
     # OPENING THE FINAL DATASET FROM LAST PROCESS TO KNOW WHAT HAS BEEN PROCESSED ALREADY
-    if config.ONLY_NEW_FILES == "Yes":
+    if config.ONLY_NEW_FILES.lower() == "yes":
         try:
             summary_file_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.SUMMARY_FOLDER, f'{config.PROJECT}_SUMMARY_MEANS.csv')
 

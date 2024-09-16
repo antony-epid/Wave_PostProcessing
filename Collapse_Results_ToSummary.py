@@ -61,16 +61,16 @@ def remove_data(dataframes):
     truncated_dataframes = []
 
     for dataframe in dataframes:
-        if config.TRUNCATE_DATA == 'Yes':
+        if config.TRUNCATE_DATA.lower() == 'yes':
             threshold_datetime = dataframe['DATETIME_ORIG'].iloc[0] + timedelta(days=config.NO_OF_DAYS)
             dataframe = dataframe[dataframe['DATETIME_ORIG'] <= threshold_datetime]
 
         # Changing Pwear to 0 if flag mechanical noise is 1
-        if config.REMOVE_MECH_NOISE == 'Yes':
+        if config.REMOVE_MECH_NOISE.lower() == 'yes':
             dataframe.loc[dataframe['FLAG_MECH_NOISE'] == 0, 'Pwear'] = 0
 
         # Dropping last data point if file contains an anomaly F
-        if config.DROP_END_ANOM_F == 'Yes':
+        if config.DROP_END_ANOM_F.lower() == 'yes':
             if dataframe['QC_anomaly_F'].min() > 0:
                 dataframe['row'] = dataframe.index + 1
                 max_row = dataframe['row'].max()

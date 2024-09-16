@@ -53,7 +53,7 @@ def formatting_summary_file():
     summary_df = summary_df[columns_order]
 
     # --- SECTION TO RUN HOUSEKEEPING AND DROP FILES NOT NEEDED IN FINAL RELEASE --- #
-    if config.RUN_HOUSEKEEPING == 'Yes':
+    if config.RUN_HOUSEKEEPING.lower() == 'yes':
         print(Fore.GREEN + "RUNNING HOUSEKEEPING AND DROPPING FILES THAT ARE NOT NEEDED IN FINAL RELEASE" + Fore.RESET)
         summary_df = summary_df[(~summary_df['filename'].isin(filenames_to_remove))]
 
@@ -116,7 +116,7 @@ def data_dictionary(summary_df):
 
     variable_label.update(pwear_labels)
 
-    if config.REMOVE_THRESHOLDS == 'No':
+    if config.REMOVE_THRESHOLDS.lower() == 'no':
         enmo_variables = [col for col in summary_df.columns if col.startswith("enmo_") and col.endswith("plus")]
 
         for variables in enmo_variables:

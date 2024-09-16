@@ -124,7 +124,7 @@ def dataframe(file_name, variable):
     if os.path.exists(dataframe_path):
         df = pd.read_csv(dataframe_path)
         file_exists = True
-        if config.RUN_HOUSEKEEPING == 'Yes':
+        if config.RUN_HOUSEKEEPING.lower() == 'yes':
             df = df[(~df[variable].isin(filenames_to_remove))]
 
     if not os.path.exists(dataframe_path):
@@ -374,7 +374,7 @@ def proportion_categories(df):
     :param df: The dataframe which is the imported summary means dataset.
     :return: The updated dataframe
     """
-    if config.REMOVE_THRESHOLDS == 'No':
+    if config.REMOVE_THRESHOLDS.lower() == 'mo':
 
         for var in config.VERIFY_VARS:
             def loop_thresholds(a, b, c, df, var):
@@ -482,7 +482,7 @@ def outliers(df, log, list_variables, extra_variable, sort, text_to_log):
     :return: None
     """
     # Adding variable to list of variables to print out
-    if config.REMOVE_THRESHOLDS == 'No' and extra_variable is not None:
+    if config.REMOVE_THRESHOLDS.lower() == 'no' and extra_variable is not None:
         list_variables.append(extra_variable)
 
     # Adding text and table to log
@@ -575,7 +575,7 @@ def get_summary_stats(condition_operator, df, log, variables, text_to_log, descr
     :param text_no_files: Text to print to log if no files to summarise
     :return:
     """
-    if config.REMOVE_THRESHOLDS == 'No':
+    if config.REMOVE_THRESHOLDS.lower() == 'no':
 
         operators = {
             "<": operator.lt,
@@ -691,7 +691,7 @@ def compare_enmo(df, log, create_var, var_diff, text_to_log, text_no_error):
     :param text_no_error: Text in case there are no differences
     :return:
     """
-    if config.REMOVE_THRESHOLDS == 'No':
+    if config.REMOVE_THRESHOLDS.lower() == 'no':
         df[create_var] = df['ENMO_0plus'] * 720
 
         # Generating difference between ENMO_n and ENMO_0plus_check
@@ -736,7 +736,7 @@ def diff_enmo(df, var1, var2, var3, log, text_to_log, text_no_error):
     for time_var in (var1, var2):
         df[f'diff_{time_var}'] = abs(df[time_var] - df[var3]) / pd.Timedelta(hours=1)
 
-    if config.REMOVE_THRESHOLDS == 'No':
+    if config.REMOVE_THRESHOLDS.lower() == 'no':
         count = df[(df['ENMO_n_0plus_diff'] > 0.01) & (df[f'diff_{var1}'] > 1) & (df[f'diff_{var2}'] > 0)].shape[0]
 
         if count > 0:

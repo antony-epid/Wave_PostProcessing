@@ -49,7 +49,7 @@ def formatting_hourly_file():
     hourly_df.drop(columns=drop_variables, inplace=True, errors='ignore')
 
     # --- SECTION TO RUN HOUSEKEEPING AND DROP FILES NOT NEEDED IN FINAL RELEASE --- #
-    if config.RUN_HOUSEKEEPING == 'Yes':
+    if config.RUN_HOUSEKEEPING.lower() == 'yes':
         print(Fore.GREEN + "RUNNING HOUSEKEEPING AND DROPPING FILES THAT ARE NOT NEEDED IN FINAL RELEASE" + Fore.RESET)
         hourly_df = hourly_df[(~hourly_df['filename'].isin(filenames_to_remove))]
 
@@ -94,7 +94,7 @@ def data_dictionary(hourly_df):
     }
 
 
-    if config.REMOVE_THRESHOLDS == 'No':
+    if config.REMOVE_THRESHOLDS.lower() == 'no':
         enmo_variables = [col for col in hourly_df.columns if col.startswith("ENMO_") and col.endswith("plus")]
 
         for variables in enmo_variables:
