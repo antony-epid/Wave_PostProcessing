@@ -55,12 +55,12 @@ def formatting_hourly_file():
 
     # Counting number of files/IDs and print the IDs
     count_number_ids = hourly_df['id'].count()
-    print(Fore.YELLOW + f'Total number of files/IDs: {count_number_ids}' + Fore.RESET)
+    print(Fore.YELLOW + f'Total number of rows of data: {count_number_ids}' + Fore.RESET)
     id_column = hourly_df['id']
     id_list = id_column.tolist()
     unique_ids = sorted(set(id_list))
     id_counts = hourly_df['id'].value_counts().sort_index()
-    print(Fore.YELLOW + "IDs and number of files per ID:" + Fore.RESET)
+    print(Fore.YELLOW + "IDs and number of hours/rows per ID:" + Fore.RESET)
     for id, count in zip(unique_ids, id_counts):
         print(Fore.YELLOW + f'{id:}   {count} files/hours' + Fore.RESET)
 
