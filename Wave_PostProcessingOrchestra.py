@@ -9,6 +9,7 @@
 # --- Importing packages --- #
 import os
 import subprocess
+import sys
 import config
 from colorama import Fore
 
@@ -29,6 +30,8 @@ RUN_PREPARE_SUMMARY_RELEASE = 'Yes'          # Prepares summary releases. Will b
 RUN_PREPARE_DAILY_RELEASE = 'Yes'            # Prepares daily releases. Will be outputted in the _releases folder together with a data dictionary
 RUN_PREPARE_HOURLY_RELEASE = 'Yes'           # Prepares hourly releases. Will be outputted in the _releases folder together with a data dictionary.
 
+# Python executable used in the virtual environment
+venv_python = sys.executable
 
 # Running script:
 def run_script(script):
@@ -36,7 +39,7 @@ def run_script(script):
     if not os.path.exists(filelist_script_path):
         print(f"Error: The script {filelist_script_path} does not exist.")
         return
-    subprocess.run(["python", filelist_script_path], check=True)
+    subprocess.run([venv_python, filelist_script_path], check=True)
 
 # Print message that script is being run:
 def print_message(message):
