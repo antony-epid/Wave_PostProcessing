@@ -374,7 +374,7 @@ def proportion_categories(df):
     :param df: The dataframe which is the imported summary means dataset.
     :return: The updated dataframe
     """
-    if config.REMOVE_THRESHOLDS.lower() == 'mo':
+    if config.REMOVE_THRESHOLDS.lower() == 'no':
 
         for var in config.VERIFY_VARS:
             def loop_thresholds(a, b, c, df, var):
