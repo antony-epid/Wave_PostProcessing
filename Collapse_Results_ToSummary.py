@@ -210,8 +210,12 @@ def summarise_variables(files_list, trimmed_dfs, time_resolutions, summary_dataf
 
         # Creating id variable if it doesn't already exist
         if 'id' not in trimmed_df.columns:
-            trimmed_df[['id', 'file_id2']] = trimmed_df['file_id'].str.split('_', n=1, expand=True)
-            trimmed_df.drop(columns=['file_id2'], inplace=True)
+            trimmed_df['file_id'] = trimmed_df['file_id'].astype(str)
+            if trimmed_df['file_id'].str.contains('_').any():
+                trimmed_df[['id', 'file_id2']] = trimmed_df['file_id'].str.split('_', n=1, expand=True)
+                trimmed_df.drop(columns=['file_id2'], inplace=True)
+            else:
+                trimmed_df['id'] = trimmed_df['file_id']
         trimmed_df['id'] = trimmed_df['id'].str.upper()
 
         # Formatting timestamp variables:
