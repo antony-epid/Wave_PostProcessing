@@ -49,13 +49,13 @@ def formatting_daily_file():
 
     # Counting number of files/IDs and print the IDs
     count_number_ids = daily_df['id'].count()
-    print(Fore.YELLOW + f'Total number of rows of data: {count_number_ids}' + Fore.RESET)
+    print(Fore.YELLOW + f'Total number of rows of data in daily release file: {count_number_ids}' + Fore.RESET)
     filename_column = daily_df['filename']
     filename_list = filename_column.tolist()
     unique_filename = sorted(set(filename_list))
 
     grouped = daily_df.groupby('filename')['day_number'].count()
-    print(Fore.YELLOW + "Filenames:" + Fore.RESET)
+    print(Fore.YELLOW + "Filenames and rows/days per ID:" + Fore.RESET)
     for filename in unique_filename:
         count_days = grouped.get(filename, 0)
         print(Fore.YELLOW + f'{filename}:    {count_days} days' + Fore.RESET)

@@ -59,7 +59,7 @@ def formatting_summary_file():
 
     # Counting number of files/IDs and print the IDs
     count_number_ids = summary_df['id'].count()
-    print(Fore.YELLOW + f'Total number of files/IDs: {count_number_ids}' + Fore.RESET)
+    print(Fore.YELLOW + f'Total number of files/IDs in summary release file: {count_number_ids}' + Fore.RESET)
     id_column = summary_df['id']
     id_list = id_column.tolist()
     print(Fore.YELLOW + "IDs:" + Fore.RESET)
