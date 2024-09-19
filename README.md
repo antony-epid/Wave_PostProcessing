@@ -1,5 +1,5 @@
 # Introduction
-Wave Post Processing is a python project that can post process the output of accelerometery data that has been processed through Wave. The Wave Post Processing project can be run either through PyCharm or through a batch file. Follow the user guides on how to setup, prepare and run the project with the two different approaches.
+Wave Post Processing is a python project that can post process the output of accelerometery data that has been processed through Wave. The Wave Post Processing project can be run either through PyCharm or through a batch file. It is recommended to set up a virtual environment in a python interpreter (in MRC Epidemiology Unit PyCharm is used) and run the project through this. Follow the user guides on how to setup, prepare and run the project with the two different approaches.
 
 Follow the repository [wiki](https://github.com/CAS254/Wave_PostProcessing/wiki) for detailed user guide on how to set up and run the script. 
 
@@ -13,7 +13,6 @@ Follow the repository [wiki](https://github.com/CAS254/Wave_PostProcessing/wiki)
 - The script has been tested on Python version 3.12. Future versions may be incompatible, although will be tested as they are released.
 - The script has been tested on hourly (h) level data. It has NOT been tested on minute (m) level data. With current setup the SUB_SET_PREFIXES in the config file should remain as it is (keeping "1h", "metadata").
 - The script has been tested to run on ENMO variables. It has NOT been tested on HPFVM, PITCH, ROLL. With current setup the VARIABLES_TO_DROP in the config file should remain as it is (dropping "HPFVM", "PITCH", "ROLL").
-
 
 
 # Downloading and preparing the environment
