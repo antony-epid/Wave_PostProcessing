@@ -10,7 +10,7 @@ For detailed user guides on setting up and running the script, refer to the repo
 
 ### Further notes 
 - This process has been developed on Windows and has **NOT** been tested on other operating systems, such as macOS.
-- The script has been tested on Python version 3.12. Future versions may be incompatible, but will occur as new versions are released.
+- The script has been tested on Python version 3.12. Future versions may be incompatible, but testing will occur as new versions are released.
 - The script has been tested on hourly (h) level data and has **NOT** been tested on minute (m) level data. With current setup the ```SUB_SET_PREFIXES``` in the config file should remain as they are (keeping "1h", "metadata").
 - The script has been tested to run on ENMO variables and has **NOT** been tested on HPFVM, PITCH or ROLL. With current setup the ```VARIABLES_TO_DROP``` in the config file should remain as is (dropping "HPFVM", "PITCH", "ROLL").
 - The script assumes that **ID** will be the first part of filename. It can extra the ID from filenames formatted as either **ID** or **ID_DeviceNumber** (It can be other details than the device number, but it is importaint that ID and additional details are seperated by an underscore). If you filename differs, you will need to edit the code to accomodate this. The section to modify can be found in ```Collapse_Results_ToSummary.py``` under **Creating id variable if it doesn't already exist**. 
