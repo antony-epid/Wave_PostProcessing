@@ -39,7 +39,7 @@ Certain Python modules are required to run the code. A **requirements.txt**  it 
 # Preparing script to run
 For a description of the different parts of the Wave Post Processing script see [Explanation of code](https://github.com/CAS254/Wave_PostProcessing/wiki/2.-Explanation-of-code). 
 
-Before executing the script, some variables must be edited to study specific setting. The two files require editing are **config.py** and the **Wave_PostProcessingOrchestra.py**. For in-depth instructions on how to edit and run the script, see the [GitHub Wiki](https://github.com/CAS254/Wave_PostProcessing/wiki).
+Before executing the script, some variables must be edited to study specific setting. The two files that require editing are **config.py** and the **Wave_PostProcessingOrchestra.py**. For in-depth instructions on how to edit and run the script, see the [GitHub Wiki](https://github.com/CAS254/Wave_PostProcessing/wiki).
 
 # Output 
 The process generates release files of the post-processed accelerometer data. It will produce three release files containing the data in hourly, daily and summary level. Each file will include data for all files/participants appended together. These files will be saved in the ```_releases``` folder. Each file will have an accompanying data dictionary. All files will be in CSV format. 
