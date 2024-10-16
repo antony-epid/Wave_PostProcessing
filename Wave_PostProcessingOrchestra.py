@@ -18,6 +18,7 @@ from colorama import Fore
 ################
 # These switches can be turned on/off depending on which part of the code is wanted to run. Providing all information is correct in config.py, the code should run without any issues
 # Change to 'Yes' to run script, change to 'No' if you don't want to run script.
+RUN_PAMPRO_MERGE_METAFILES = 'Yes'           # This needs running if accelerometer files are run through Pampro to merge metafiles into 1 for each person.
 RUN_FILELIST_GENERATION = 'Yes'              # Create a filelist of all Wave output files. Depending on what is specified in the config.py, this might be all available or only the new files (that are not in the appended summary file)
 RUN_GENERIC_EXH_POSTPROCESSING = 'Yes'       # Generic exhaustive post processing works through generic updates to the Wave output. This needs to be completed before collapsing any data.
 RUN_COLLAPSE_RESULTS_TO_SUMMARY = 'Yes'      # Takes the file created from exhaustive post processing and collapses it down to a summary (1 line) file. These are saved as individual files.
@@ -35,7 +36,7 @@ venv_python = sys.executable
 
 # Running script:
 def run_script(script):
-    filelist_script_path = os.path.join(config.ROOT_FOLDER, config.ANALYSIS_FOLDER, script)
+    filelist_script_path = os.path.join(config.ANALYSIS_FOLDER, script)
     if not os.path.exists(filelist_script_path):
         print(f"Error: The script {filelist_script_path} does not exist.")
         return
@@ -46,6 +47,11 @@ def print_message(message):
     print(Fore.GREEN + message + Fore.RESET)
 
 if __name__ == '__main__':
+    # Running Pampro_Merge_MetaFiles script if files were processed through Wave:
+    if config.PROCESSING.lower() == 'pampro':
+        if RUN_PAMPRO_MERGE_METAFILES.lower() == 'yes':
+            print_message("MERGING METAFILES")
+            run_script("Pampro_Merge_MetaFiles.py")
 
     # Running the Filelist_Generation script:
     if RUN_FILELIST_GENERATION.lower() == 'yes':
