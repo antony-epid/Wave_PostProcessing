@@ -28,7 +28,7 @@ RUN_APPEND_DAILY_FILES = 'Yes'               # Appends together the daily level 
 RUN_APPEND_HOURLY_FILES = 'Yes'              # Appends together the hourly level data files (created within the collapse results to summary file)
 RUN_VERIFICATION_CHECKS = 'Yes'              # Verification code will run some basic checks on the summary and hourly level data looking for potential issues (i.e. duplicate/ extreme outliers). Does not need to be ran to prepare release files, but useful to fully check data. Will be outputted in the _logs folder.
 RUN_PREPARE_SUMMARY_RELEASE = 'Yes'          # Prepares summary releases. Will be outputted in the _releases folder together with a data dictionary.
-RUN_PREPARE_DAILY_RELEASE = 'Yes'            # Prepares daily releases. Will be outputted in the _releases folder together with a data dictionary
+RUN_PREPARE_DAILY_RELEASE = 'Yes'            # Prepares daily releases. Will be outputted in the _releases folder together with a data dictionary.
 RUN_PREPARE_HOURLY_RELEASE = 'Yes'           # Prepares hourly releases. Will be outputted in the _releases folder together with a data dictionary.
 
 # Python executable used in the virtual environment
