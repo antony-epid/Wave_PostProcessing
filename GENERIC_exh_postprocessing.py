@@ -2,6 +2,7 @@
 # This file handles wave output for generic waveform output
 # Author: CAS
 # Date: 13/06/2024
+# Version: 1.1. Added sections to be able to run on Pampro output
 # Version: 1.0 Translated from Stata code
 ############################################################################################################
 # Importing packages
@@ -11,6 +12,7 @@ import os
 import pandas as pd
 import pytz
 from datetime import datetime, timedelta
+from colorama import Fore
 
 # READING IN FILELIST
 def reading_filelist():
@@ -32,7 +34,12 @@ def reading_metadata(files_list):
             metadata_df = pd.read_csv(metadata_file_path)
             metadata_df['file_id'] = file_id
 
-            columns_to_keep = ['file_id', 'subject_code', 'device', 'start_error', 'end_error', 'calibration_method', 'noise_cutoff_mg', 'processing_epoch', 'generic_first_timestamp', 'generic_last_timestamp', 'QC_first_battery_pct', 'QC_last_battery_pct', 'frequency', 'QC_anomalies_total', 'QC_anomaly_A', 'QC_anomaly_B', 'QC_anomaly_C', 'QC_anomaly_D', 'QC_anomaly_E', 'QC_anomaly_F', 'QC_anomaly_G', 'processing_script']
+            columns_to_keep = ['file_id', 'subject_code', 'device', 'calibration_method', 'noise_cutoff_mg', 'processing_epoch', 'generic_first_timestamp', 'generic_last_timestamp', 'QC_first_battery_pct', 'QC_last_battery_pct', 'frequency']
+            if config.PROCESSING.lower() == 'wave':
+                extra_columns = [ 'start_error', 'end_error', 'QC_anomalies_total', 'QC_anomaly_A', 'QC_anomaly_B', 'QC_anomaly_C', 'QC_anomaly_D', 'QC_anomaly_E', 'QC_anomaly_F', 'QC_anomaly_G', 'processing_script']
+            if config.PROCESSING.lower() == "pampro":
+                extra_columns = ['file_start_error', 'file_end_error', 'days_of_data_processed', 'mf_start_error', 'mf_end_error', 'calibration_type']
+            columns_to_keep.extend(extra_columns)
             metadata_df = metadata_df.reindex(columns=columns_to_keep)
 
             metadata_dfs.append(metadata_df)
@@ -56,8 +63,8 @@ def reading_datafile(files_list):
             datafile_df['file_id'] = file_id
             datafile_df.rename(columns={'id': 'database_id'}, inplace=True)
             datafile_df.columns = [col[:-6] + "plus" if col.endswith("_99999") else col for col in datafile_df.columns]
+            datafile_df.columns = [col.replace("-", "") if col.lower().startswith("pitch") or col.lower().startswith("roll") else col for col in datafile_df.columns]
             datafile_df = datafile_df.drop(columns=[col for col in datafile_df.columns if any(var in col for var in config.VARIABLES_TO_DROP)])
-
             datafiles_dfs.append(datafile_df)
         else:
             print(f"Data file for ID: {file_id} not found")
@@ -65,8 +72,17 @@ def reading_datafile(files_list):
 
     return datafiles_dfs
 
-# MERGING METADATA FILE AND DATA FILE AND FORMATTING MERGED DATAFRAME
-def merging_data(files_list, metadata_dfs, datafiles_dfs):
+# READING ANOMALIES FILE
+def anomalies():
+    anomaly_file_path = os.path.join(config.ROOT_FOLDER, config.ANOMALIES_FOLDER, config.ANOMALIES_FILE)
+    if os.path.exists(anomaly_file_path):
+        anomalies_df = pd.read_csv(anomaly_file_path)
+        return anomalies_df
+    else:
+        return pd.DataFrame()
+
+# MERGING METADATA FILE AND DATA FILE, THEN MERGING ON ANOMALIES FILE AND FORMATTING MERGED DATAFRAME
+def merging_data(files_list, metadata_dfs, datafiles_dfs, anomalies_df):
     merged_dfs = []
     time_resolutions = []
 
@@ -75,6 +91,14 @@ def merging_data(files_list, metadata_dfs, datafiles_dfs):
         columns = merged_df.columns.tolist()
         columns.insert(0, columns.pop(columns.index('file_id')))
         merged_df = merged_df[columns]
+
+        # Merged on anomaly information
+        if config.PROCESSING.lower() == 'pampro':
+            if anomalies_df is not None and not anomalies_df.empty:
+                merged_df = pd.merge(merged_df, anomalies_df[['file_id', 'Anom_A', 'Anom_B', 'Anom_C', 'Anom_D', 'Anom_E', 'Anom_F']], on='file_id', how='left')
+            else:
+                anomaly_columns = ['Anom_A', 'Anom_B', 'Anom_C', 'Anom_D', 'Anom_E', 'Anom_F']
+                merged_df[anomaly_columns] = np.nan
 
         # Reformat timestamp:
         merged_df['timestamp'] = merged_df['timestamp'].str.replace(':000000', '')
@@ -112,7 +136,7 @@ def merging_data(files_list, metadata_dfs, datafiles_dfs):
             merged_df['DATETIME_COPY'] = merged_df['DATETIME_ORIG'].dt.tz_localize('UTC').dt.tz_convert(tz)
             merged_df['BST'] = merged_df['DATETIME_COPY'].apply(lambda x: x.dst() != timedelta(0))
 
-            # Creating bst variables, to check if there is a change through the datafrom from summer time to winter time or other way
+            # Creating bst variables, to check if there is a change through the data from from summer time to winter time or other way
             prev_bst = None
 
             bst_values = merged_df['BST'].unique()
@@ -224,12 +248,47 @@ def pwear_variables(valid_dfs, time_resolutions):
             if var in valid_df.columns:
                 valid_df.loc[valid_df['ENMO_n'] == 0, var] = None
 
-
         formatted_dfs.append(valid_df)
     return formatted_dfs
 
-# CREATING FLAG FOR MECHANICAL NOISE THAT IS BEING COUNTED AS WEAR TIME
+# Using start/end times from wear log if this was used
+def wear_log(formatted_dfs):
+
+    # Importing wear log as a dataframe
+    wear_log_path = os.path.join(config.ROOT_FOLDER, config.WEAR_LOG_FOLDER, f"{config.WEAR_LOG}.csv")
+
+    if os.path.exists(wear_log_path):
+        wear_df = pd.read_csv(wear_log_path)
+        variables = ['start', 'end']
+        for var in variables:
+            wear_df[var] = pd.to_datetime(wear_df[var], format='%d/%m/%Y %H:%M')
+
+        # Merging wear log with each file, merging on id
+        for i, formatted_df in enumerate(formatted_dfs):
+            formatted_df['id'] = formatted_df['file_id'].apply(lambda x: x.split('_', 1)[0])
+            formatted_df = pd.merge(formatted_df, wear_df, how='outer', on='id', indicator=True)
+            formatted_df['day_valid'] = 0
+            if formatted_df['_merge'].iloc[0] == 'both':
+                formatted_df['day_valid'] = formatted_df.apply(lambda x: 1 if x['start'] <= x['DATETIME'] < x['end'] else 0, axis=1)
+            if formatted_df['_merge'].iloc[0] == 'left_only':
+                formatted_df['flag_no_wear_info'] = 1
+            formatted_df['day_valid'] = formatted_df.apply(lambda x: 2 if x['flag_no_wear_info'] == 1 else x['day_valid'], axis=1)
+
+            formatted_df = formatted_df.drop(columns=['id', '_merge'])
+
+
+            formatted_dfs[i] = formatted_df
+        return formatted_dfs
+    else:
+        print(f"There is no wear log saved in this folder location: {wear_log_path}. If you have a wear log that you wish to use make sure to save it in the folder. If no wear log the script can continue running without this.")
+
+
+# CREATING FLAG FOR MECHANICAL NOISE THAT IS BEING COUNTED AS WEAR TIME AND RUNNING CORRUPTIONS HOUSEKEEPING
 def mechanical_noise(formatted_dfs):
+
+    # Printing out message that corruptions housekeeping is run (It is run a bit later in this function, but put it here so that it only prints out the message once and not fo each file)
+    if config.RUN_CORRUPTIONS_HOUSEKEEPING.lower() == 'yes':
+        print(Fore.GREEN + "RUNNING CORRUPTIONS HOUSEKEEPING TO ADJUST PWEAR BASED ON VERIFICATION CHECKS AND SPECIFICATIONS IN CORRUPTIONS CONDITIONS CSV" + Fore.RESET)
 
     dataframes = []
 
@@ -244,9 +303,38 @@ def mechanical_noise(formatted_dfs):
         # Flagging epochs that have a very small amount of Pwear - but is getting a large amount of enmo for that blip of data.
         formatted_df.loc[(formatted_df['ENMO_mean'] >= 600) & (formatted_df['Pwear'] <= 0.1) & (formatted_df['Pwear'] != 0) & (formatted_df['ENMO_mean'].notna()), 'FLAG_MECH_NOISE'] = 1
 
+        # --- SECTION TO RUN HOUSEKEEPING AND DROP FILES NOT NEEDED IN FINAL RELEASE --- #
+        if config.RUN_CORRUPTIONS_HOUSEKEEPING.lower() == 'yes':
+            # Reading in corruption condition csv file where rows that are corrupted are specified manually
+            if os.path.exists(config.CORRUPTION_CONDITION_FILE_PATH):
+                conditions_df = pd.read_csv(config.CORRUPTION_CONDITION_FILE_PATH)
+
+                try:
+                    conditions_df['DATE'] = pd.to_datetime(conditions_df['DATE'], format='%d/%m/%Y', errors='raise')
+                    formatted_df['DATE'] = pd.to_datetime(formatted_df['DATE'], format='%Y-%m-%d', errors='coerce')
+                except ValueError as e:
+                    print(Fore.RED + "\nError: Ensure that all dates in the DATE column in the corruptions condition csv are in the format dd/mm/YYYY (e.g., 01/01/1990). Re-run scripts once this has been corrected." + Fore.RESET)
+
+                # Specifying rows to filter conditions on
+                for _, row in conditions_df.iterrows():
+                    conditions = (
+                        (formatted_df['DATE'] == row['DATE']) &
+                        (formatted_df['hourofday'] == row['hourofday']) &
+                        (formatted_df['dayofweek'] == row['dayofweek']) &
+                        (formatted_df['file_id'] == row['file_id'])
+                    )
+
+                    # Changing Pwear to 0 where conditions are met
+                    formatted_df.loc[conditions, 'Pwear'] = 0
+            else:
+                print(f"No corruption condition csv file was found in the specified location: {config.CORRUPTION_CONDITION_FILE_PATH}. Make sure to save the file and edit the CORRUPTION_CONDITION_FILE_PATH in the config.py file.")
         dataframes.append(formatted_df)
 
     return dataframes
+
+
+
+
 
 # OUTPUTTING THE DATAFRAME TO THE INDIVIDUAL_PARTPRO_FILES FOLDER
 def outputting_dataframe(dataframes, files_list):
@@ -270,8 +358,12 @@ if __name__ == '__main__':
     files_list = reading_filelist()
     metadata_dfs = reading_metadata(files_list)
     datafiles_dfs = reading_datafile(files_list)
-    time_resolutions, merged_dfs = merging_data(files_list, metadata_dfs, datafiles_dfs)
+    if config.PROCESSING.lower() == 'pampro':
+        anomalies_df = anomalies()
+    time_resolutions, merged_dfs = merging_data(files_list, metadata_dfs, datafiles_dfs, anomalies_df)
     valid_dfs = indicator_variable(time_resolutions, merged_dfs)
     formatted_dfs = pwear_variables(valid_dfs, time_resolutions)
+    if config.MERGE_WEAR_LOG == 'Yes':
+        wear_log(formatted_dfs)
     dataframes = mechanical_noise(formatted_dfs)
     outputting_dataframe(dataframes, files_list)
