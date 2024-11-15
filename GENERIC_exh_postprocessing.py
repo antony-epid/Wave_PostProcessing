@@ -1,7 +1,7 @@
 ############################################################################################################
-# This file handles wave output for generic waveform output
+# This file handles wave and pampro output for generic waveform output
 # Author: CAS
-# Date: 13/06/2024
+# Date: 15/11/2024
 # Version: 1.1. Added sections to be able to run on Pampro output
 # Version: 1.0 Translated from Stata code
 ############################################################################################################
