@@ -267,16 +267,14 @@ def wear_log(formatted_dfs):
         for i, formatted_df in enumerate(formatted_dfs):
             formatted_df['id'] = formatted_df['file_id'].apply(lambda x: x.split('_', 1)[0])
             formatted_df = pd.merge(formatted_df, wear_df, how='outer', on='id', indicator=True)
+            formatted_df = formatted_df[formatted_df['_merge'] != 'right_only']
             formatted_df['day_valid'] = 0
             if formatted_df['_merge'].iloc[0] == 'both':
                 formatted_df['day_valid'] = formatted_df.apply(lambda x: 1 if x['start'] <= x['DATETIME'] < x['end'] else 0, axis=1)
             if formatted_df['_merge'].iloc[0] == 'left_only':
                 formatted_df['flag_no_wear_info'] = 1
             formatted_df['day_valid'] = formatted_df.apply(lambda x: 2 if x['flag_no_wear_info'] == 1 else x['day_valid'], axis=1)
-
             formatted_df = formatted_df.drop(columns=['id', '_merge'])
-
-
             formatted_dfs[i] = formatted_df
         return formatted_dfs
     else:
@@ -363,7 +361,7 @@ if __name__ == '__main__':
     time_resolutions, merged_dfs = merging_data(files_list, metadata_dfs, datafiles_dfs, anomalies_df)
     valid_dfs = indicator_variable(time_resolutions, merged_dfs)
     formatted_dfs = pwear_variables(valid_dfs, time_resolutions)
-    if config.MERGE_WEAR_LOG == 'Yes':
+    if config.USE_WEAR_LOG == 'Yes':
         wear_log(formatted_dfs)
     dataframes = mechanical_noise(formatted_dfs)
     outputting_dataframe(dataframes, files_list)
