@@ -36,7 +36,7 @@ def reading_metadata(files_list):
 
             columns_to_keep = ['file_id', 'subject_code', 'device', 'calibration_method', 'noise_cutoff_mg', 'processing_epoch', 'generic_first_timestamp', 'generic_last_timestamp', 'QC_first_battery_pct', 'QC_last_battery_pct', 'frequency']
             if config.PROCESSING.lower() == 'wave':
-                extra_columns = [ 'start_error', 'end_error', 'QC_anomalies_total', 'QC_anomaly_A', 'QC_anomaly_B', 'QC_anomaly_C', 'QC_anomaly_D', 'QC_anomaly_E', 'QC_anomaly_F', 'QC_anomaly_G', 'processing_script']
+                extra_columns = ['start_error', 'end_error', 'QC_anomalies_total', 'QC_anomaly_A', 'QC_anomaly_B', 'QC_anomaly_C', 'QC_anomaly_D', 'QC_anomaly_E', 'QC_anomaly_F', 'QC_anomaly_G', 'processing_script']
             if config.PROCESSING.lower() == "pampro":
                 extra_columns = ['file_start_error', 'file_end_error', 'days_of_data_processed', 'mf_start_error', 'mf_end_error', 'calibration_type']
             columns_to_keep.extend(extra_columns)
@@ -276,6 +276,7 @@ def wear_log(formatted_dfs):
             formatted_df['day_valid'] = formatted_df.apply(lambda x: 2 if x['flag_no_wear_info'] == 1 else x['day_valid'], axis=1)
             formatted_df = formatted_df.drop(columns=['id', '_merge'])
             formatted_dfs[i] = formatted_df
+
         return formatted_dfs
     else:
         print(f"There is no wear log saved in this folder location: {wear_log_path}. If you have a wear log that you wish to use make sure to save it in the folder. If no wear log the script can continue running without this.")
@@ -331,14 +332,10 @@ def mechanical_noise(formatted_dfs):
     return dataframes
 
 
-
-
-
 # OUTPUTTING THE DATAFRAME TO THE INDIVIDUAL_PARTPRO_FILES FOLDER
 def outputting_dataframe(dataframes, files_list):
 
     for dataframe, file_list in zip(dataframes, files_list):
-
         dataframe.sort_values(by=['file_id', 'DATETIME'], inplace=True)
 
         # Rounding all numeric columns to 4 decimal places
