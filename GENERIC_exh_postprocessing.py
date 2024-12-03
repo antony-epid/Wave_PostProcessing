@@ -340,7 +340,7 @@ def outputting_dataframe(dataframes, files_list):
 
         # Rounding all numeric columns to 4 decimal places
         numeric_columns = dataframe.select_dtypes(include=['float64', 'float32']).columns
-        dataframe[numeric_columns] = dataframe[numeric_columns].round(4)
+        dataframe[numeric_columns] = dataframe[numeric_columns].round(6)
 
         file_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.SUMMARY_FOLDER, config.INDIVIDUAL_PARTPRO_F, config.TIME_RES_FOLDER)
         os.makedirs(file_path, exist_ok=True)
