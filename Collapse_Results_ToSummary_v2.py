@@ -268,6 +268,7 @@ def input_data(df, time_resolution):
         device_value = first_row_data['device']
         noise_cutoff_value = first_row_data['noise_cutoff_mg']
         processing_epoch_value = first_row_data['processing_epoch']
+        calibration_method_value = first_row_data['calibration_method']
         if config.PROCESSING.lower() == 'wave':
             file_end_error_value = first_row_data['end_error']
             file_start_error_value = first_row_data['start_error']
@@ -277,7 +278,6 @@ def input_data(df, time_resolution):
             mf_start_error_value = first_row_data['mf_start_error']
             mf_end_error_value = first_row_data['mf_end_error']
             calibration_type_value = first_row_data['calibration_type']
-            calibration_method_value = first_row_data['calibration_method']
         if config.USE_WEAR_LOG.lower() == 'yes':
             wear_log_start_value = first_row_data['start']
             wear_log_end_value = first_row_data['end']
@@ -316,8 +316,6 @@ def input_data(df, time_resolution):
             'processing_epoch': processing_epoch_value,
             'file_start_error': file_start_error_value,
             'file_end_error': file_end_error_value,
-            'mf_start_error': mf_start_error_value,
-            'mf_end_error': mf_end_error_value,
             'generic_first_timestamp': generic_first_timestamp_value,
             'generic_last_timestamp': generic_last_timestamp_value,
             'qc_first_battery_pct': qc_first_battery_pct_value,
@@ -341,6 +339,8 @@ def input_data(df, time_resolution):
 
         if config.PROCESSING.lower() == 'pampro':
             pampro_dict = {
+                'mf_start_error': mf_start_error_value,
+                'mf_end_error': mf_end_error_value,
                 'calibration_type': calibration_type_value,
                 'Anom_A': qc_anomaly_a_value,
                 'Anom_B': qc_anomaly_b_value,
@@ -418,48 +418,47 @@ def input_pwear_segment(df, summary_dict):
 
 # SUMMARISING HOURLY AND DAILY ENMO AND PWEAR VARIABLES
 def input_hourly_daily(df, summary_dict):
-    if config.PROCESSING.lower() == 'pampro':
-        if df is not None and not df.empty:
+    if df is not None and not df.empty:
 
-            hourly_enmo_means = df.groupby('hourofday')['ENMO_mean'].mean()
-            hourly_enmo_variables = {
-                f'enmo_mean_hour{hour}': hourly_enmo_means.get(hour, np.nan) for hour in range(1, 25)
+        hourly_enmo_means = df.groupby('hourofday')['ENMO_mean'].mean()
+        hourly_enmo_variables = {
+            f'enmo_mean_hour{hour}': hourly_enmo_means.get(hour, np.nan) for hour in range(1, 25)
+        }
+        summary_dict.update(hourly_enmo_variables)
+
+        hourly_pwear_sums = df.groupby('hourofday')['Pwear'].sum()
+        hourly_pwear_variables = {
+            f'pwear_hour{hour}': hourly_pwear_sums.get(hour, np.nan) for hour in range(1, 25)
+        }
+        summary_dict.update(hourly_pwear_variables)
+
+        daily_enmo_means = df.groupby('dayofweek')['ENMO_mean'].mean()
+        daily_enmo_variables = {
+            f'enmo_mean_day{day}': daily_enmo_means.get(day, np.nan) for day in range(1, 8)
+        }
+        summary_dict.update(daily_enmo_variables)
+
+        daily_pwear_sums = df.groupby('dayofweek')['Pwear'].sum()
+        daily_pwear_variables = {
+            f'pwear_day{day}': daily_pwear_sums.get(day, np.nan) for day in range(1, 8)
+        }
+        summary_dict.update(daily_pwear_variables)
+
+        if not any(item.lower() == "hpfvm" for item in config.VARIABLES_TO_DROP):
+            hourly_hpfvm_means = df.groupby('hourofday')['HPFVM_mean'].mean()
+            hourly_hpfvm_variables = {
+                f'hpfvm_mean_hour{hour}': hourly_hpfvm_means.get(hour, np.nan) for hour in range(1, 25)
             }
-            summary_dict.update(hourly_enmo_variables)
+            summary_dict.update(hourly_hpfvm_variables)
 
-            hourly_pwear_sums = df.groupby('hourofday')['Pwear'].sum()
-            hourly_pwear_variables = {
-                f'pwear_hour{hour}': hourly_pwear_sums.get(hour, np.nan) for hour in range(1, 25)
+            daily_hpfvm_means = df.groupby('dayofweek')['HPFVM_mean'].mean()
+            daily_hpfvm_variables = {
+                f'hpfvm_mean_day{day}': daily_hpfvm_means.get(day, np.nan) for day in range(1, 8)
             }
-            summary_dict.update(hourly_pwear_variables)
+            summary_dict.update(daily_hpfvm_variables)
 
-            daily_enmo_means = df.groupby('dayofweek')['ENMO_mean'].mean()
-            daily_enmo_variables = {
-                f'enmo_mean_day{day}': daily_enmo_means.get(day, np.nan) for day in range(1, 8)
-            }
-            summary_dict.update(daily_enmo_variables)
 
-            daily_pwear_sums = df.groupby('dayofweek')['Pwear'].sum()
-            daily_pwear_variables = {
-                f'pwear_day{day}': daily_pwear_sums.get(day, np.nan) for day in range(1, 8)
-            }
-            summary_dict.update(daily_pwear_variables)
-
-            if not any(item.lower() == "hpfvm" for item in config.VARIABLES_TO_DROP):
-                hourly_hpfvm_means = df.groupby('hourofday')['HPFVM_mean'].mean()
-                hourly_hpfvm_variables = {
-                    f'hpfvm_mean_hour{hour}': hourly_hpfvm_means.get(hour, np.nan) for hour in range(1, 25)
-                }
-                summary_dict.update(hourly_hpfvm_variables)
-
-                daily_hpfvm_means = df.groupby('dayofweek')['HPFVM_mean'].mean()
-                daily_hpfvm_variables = {
-                    f'hpfvm_mean_day{day}': daily_hpfvm_means.get(day, np.nan) for day in range(1, 8)
-                }
-                summary_dict.update(daily_hpfvm_variables)
-                
-                
-            return summary_dict
+        return summary_dict
 
 
 # SUMMARISING OUTPUT VARIABLES
@@ -799,7 +798,9 @@ if __name__ == '__main__':
         # Summarizing data and inputting into dataframe
         quad_variables = [quad_morning_hours, quad_noon_hours, quad_afternoon_hours, quad_night_hours]
         summary_dict = input_pwear_segment(df, summary_dict)
-        summary_dict = input_hourly_daily(df, summary_dict)
+
+        if config.PROCESSING.lower() == 'pampro':
+            summary_dict = input_hourly_daily(df, summary_dict)
         summary_dict = input_output_variables(df, summary_dict, time_resolution)
 
         # Impute hours
