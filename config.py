@@ -23,6 +23,7 @@ REMOVE_THRESHOLDS = 'No'                        # EDIT: Set to 'Yes' if you want
 PC_TYPE = "WINDOWS"                             # EDIT: Choice of "WINDOWS" or "MAC". Code runs slightly different on windows and mac.
 count_prefixes = "1h"                           # DO NOT EDIT: Processing resolution. Specify what time resolutions you want. Normally "1h" (1m is not tested)
 PC_DATE = date.today().strftime("%d%b%Y")       # DO NOT EDIT.
+PROCESSING = 'Pampro'                             # EDIT: 'Wave' if files were processed through Wave or 'Pampro' if files were processed through Pampro.
 
 
 # --- FOLDERS --- #
