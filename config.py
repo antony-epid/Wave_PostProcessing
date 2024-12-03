@@ -32,6 +32,7 @@ RESULTS_FOLDER = '_results'                                                     
 RELEASES_FOLDER = '_releases'                                                                       # DO NOT EDIT BUT MAKE SURE _releases FOLDER EXISTS: Where the release files will be saved
 FEEDBACK_FOLDER = '_feedback'                                                                       # DO NOT EDIT BUT MAKE SURE _feedback FOLDER EXISTS: For the csv files used to create the feedback plot
 LOG_FOLDER = '_logs'                                                                                # DO NOT EDIT BUT MAKE SURE _logs FOLDER EXISTS. Where the verification and QC data log files will be saved.
+ANOMALIES_FOLDER = '_anomalies'                                                                     # DO NOT EDIT BUT MAKE SURE _anomalies FOLDER EXISTS. Any anomalies.csv files created when files were processed through pampro should be saved here.
 FILELIST_FOLDER = 'Filelists'                                                                       # DO NOT EDIT: Auto generated folder where post processing filelist is saved (Found within _results folder)
 SUMMARY_FOLDER = 'Summary_Files'                                                                    # DO NOT EDIT: Auto generated folder where all summary files are saved (Found within _results folder)
 INDIVIDUAL_PARTPRO_F = 'Individual_PartPro_files'                                                   # DO NOT EDIT: Auto generated folder for individual part processed files (found within _Summary_Files folder)
@@ -39,12 +40,14 @@ INDIVIDUAL_SUM_F = 'Individual_Summary_files'                                   
 INDIVIDUAL_DAILY_F = 'Individual_Daily_files'                                                       # DO NOT EDIT: Auto generated folder to contain all individual daily files (found within _Summary_Files folder)
 INDIVIDUAL_TRIMMED_F = 'Individual_Trimmed_files'                                                   # DO NOT EDIT: Auto generated folder to contain all individual hourly trimmed files (found within _Summary_Files folder)
 TIME_RES_FOLDER = f"{count_prefixes}_level"                                                         # DO NOT EDIT: Auto generated folder for the specified time resolution (within each summary/daily/hourly folder)
+WEAR_LOG_FOLDER = '_analysis/trim_times'                                                           # EDIT: Name of folder were the wear log is saved in, if a wear log is used. Add the name of the sub-folder as well if the wear log is saved within a sub-folder in the root folder for the project.
 
 
 # --- HOUSEKEEPING --- #
 
 RUN_HOUSEKEEPING = 'Yes'        # EDIT: Set to 'Yes' if you have housekeeping script to drop any duplicates etc. Set to 'No' if you don't have a housekeeping script to run.
-
+RUN_CORRUPTIONS_HOUSEKEEPING = 'Yes'  # EDIT: Set to 'yes' if you have a corruptions housekeeping file to adjust pwear based on verification checks
+CORRUPTION_CONDITION_FILE_PATH = 'C:/Users/cas254/PycharmProjects/PostProcessing/corruptions_conditions.csv'  # EDIT: Edit to the file path for the corruptions_conditions filepath, this should include the name and file extension of the file itself. (e.g., corruptions_conditions.csv)
 
 ###########################################################################
 # --- VARIABLES BELOW ARE SPECIFIC TO EACH PART OF THE POSTPROCESSING --- #
@@ -58,10 +61,13 @@ ONLY_NEW_FILES = 'Yes'                               # EDIT: Set to 'No' if you 
 
 # --- GENERIC EXH POSTPROCESSING ADDITIONAL VARIABLES --- #
 # EDIT: Variables below can be adapted if you want to specify other variables to drop and if you wish to adjust for daylight saving times.
-VARIABLES_TO_DROP = ["HPFVM", "PITCH", "ROLL"]      # DO NOT EDIT: Specify what variables to drop (Normally this will be ["HPFVM", "PITCH", "ROLL"]). Not tested to run on HPFVM, PITCH and ROLL yet.
+VARIABLES_TO_DROP = []     # DO NOT EDIT: Specify what variables to drop (Normally this will be ["HPFVM", "PITCH", "ROLL"]). Not tested to run on HPFVM, PITCH and ROLL yet.
 CLOCK_CHANGES = 'Yes'                               # EDIT: If set 'Yes' it will adjust data for daylight savings. Swith to 'No' if in a country without clock changes
 TIMEZONE = 'Europe/London'                          # EDIT: Change to the timezone data is collected in. To find correct name for timezone, in google type "pytz timezone" followed by the country (Or see list herehttps://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568)
+USE_WEAR_LOG = 'Yes'                              # EDIT: Set to 'Yes' if there is a wear log and to use only certain days (specified in wear log).
+WEAR_LOG = 'example_wear_log'                           # EDIT: Name of wear log file if MERGE_WEAR_LOG is Yes.
 # DO NOT EDIT: Variables below do not need editing if you are happy with the standard file naming output.
+ANOMALIES_FILE = 'collapsed_anomalies.csv'          # DO NOT EDIT: Filename for collapsed anomalies files. This file is generated if data were processed through Pampro and if the Pampro_Collate_Anomalies are run (only if any anomalies are present in dataset)
 OUTPUT_FILE_EXT = f"{count_prefixes}_part_proc"     # DO NOT EDIT: Extension for the output files from exhaustive post processing.
 
 
@@ -80,7 +86,13 @@ TRUNCATE_DATA = 'No'                                # EDIT: Set to 'Yes' if want
 NO_OF_DAYS = 7                                      # EDIT: Set to number of days to be added to the start data if have start but no end date (taken from wearing time).
 REMOVE_MECH_NOISE = 'Yes'                           # EDIT: Set to 'Yes' if you want to set Pwear to 0 for hours that have been flagged as potential mechanical noise. Flag produced at Generic_exh_postprocessing. Set to 'No' if you want to keep Pwear as it is.
 DROP_END_ANOM_F = 'Yes'                             # EDIT: Set to 'Yes' to drop the last data point of the file if the file contain an Anomaly F. Set to 'No' if you want to keep the last data point.
+IMPUTE_DATA = 'Yes'                                 # EDIT: If the monitor was worn for 6+ hours during the day but not during night you can impute sleep data. Change to 'Yes' if you want to impute sleep data and no if you don't want to. You can't impute sleep data on days where monitor was not worn.
+IMPUTE_HOURS = [1, 2, 3, 4, 5, 6]                   # DO NOT EDIT: Which hours of day you want to impute (e.g., 1=00:00-01:00, 2=01:00-02:00)
+MIN_DAY_HOURS = 6                                   # EDIT: Number of hours within a day that has to be worn before sleep can be imputed (for that day)
 
+# List of anomaly variables as the naming are different from wave and pampro - DO NOT EDIT THIS:
+ANOM_VAR_PAMPRO = ['Anom_A', 'Anom_B', 'Anom_C', 'Anom_D', 'Anom_E', 'Anom_F']
+ANOM_VAR_WAVE = ['QC_anomaly_A', 'QC_anomaly_B', 'QC_anomaly_C', 'QC_anomaly_D', 'QC_anomaly_E', 'QC_anomaly_F', 'QC_anomaly_G']
 
 # --- APPENDING SUMMARY / DAILY / HOURLY DATASETS --- #
 # DO NOT EDIT: Variables below do not need editing if you are happy with the standard file naming output. Will use project name specified previously.
