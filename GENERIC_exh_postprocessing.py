@@ -355,7 +355,9 @@ if __name__ == '__main__':
     datafiles_dfs = reading_datafile(files_list)
     if config.PROCESSING.lower() == 'pampro':
         anomalies_df = anomalies()
-    time_resolutions, merged_dfs = merging_data(files_list, metadata_dfs, datafiles_dfs, anomalies_df)
+        time_resolutions, merged_dfs = merging_data(files_list, metadata_dfs, datafiles_dfs, anomalies_df)
+    if config.PROCESSING.lower() == 'wave':
+        time_resolutions, merged_dfs = merging_data(files_list, metadata_dfs, datafiles_dfs, None)
     valid_dfs = indicator_variable(time_resolutions, merged_dfs)
     formatted_dfs = pwear_variables(valid_dfs, time_resolutions)
     if config.USE_WEAR_LOG == 'Yes':
