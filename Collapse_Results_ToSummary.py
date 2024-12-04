@@ -420,9 +420,12 @@ def input_pwear_segment(df, summary_dict):
 def input_hourly_daily(df, summary_dict):
     if df is not None and not df.empty:
 
-        hourly_enmo_means = df.groupby('hourofday')['ENMO_mean'].mean()
+        weighted_hourly_means = (
+            df.assign(weighted_ENMO = df['ENMO_mean'] * df['Pwear']).groupby('hourofday')
+            .apply(lambda x: x['weighted_ENMO'].sum() / x['Pwear'].sum(), include_groups=False)
+        )
         hourly_enmo_variables = {
-            f'enmo_mean_hour{hour}': hourly_enmo_means.get(hour, np.nan) for hour in range(1, 25)
+            f'enmo_mean_hour{hour}': weighted_hourly_means.get(hour, np.nan) for hour in range(1, 25)
         }
         summary_dict.update(hourly_enmo_variables)
 
@@ -432,9 +435,13 @@ def input_hourly_daily(df, summary_dict):
         }
         summary_dict.update(hourly_pwear_variables)
 
-        daily_enmo_means = df.groupby('dayofweek')['ENMO_mean'].mean()
+
+        weighted_daily_means = (
+            df.assign(weighted_daily_ENMO = df['ENMO_mean'] * df['Pwear']).groupby('dayofweek')
+            .apply(lambda x: x['weighted_daily_ENMO'].sum() / x['Pwear'].sum(), include_groups=False)
+        )
         daily_enmo_variables = {
-            f'enmo_mean_day{day}': daily_enmo_means.get(day, np.nan) for day in range(1, 8)
+            f'enmo_mean_day{day}': weighted_daily_means.get(day, np.nan) for day in range(1, 8)
         }
         summary_dict.update(daily_enmo_variables)
 
@@ -622,9 +629,12 @@ def impute_data(df, time_resolution):
                         summary_dict[column_name] = results.params['const']
 
         # Hourly and daily Enmo and Pwear variables
-        hourly_enmo_means = df.groupby('hourofday')['ENMO_mean'].mean()
+        weighted_hourly_means_IMP = (
+            df.assign(weighted_ENMO_IMP=df['ENMO_mean'] * df['Pwear']).groupby('hourofday')
+            .apply(lambda x: x['weighted_ENMO_IMP'].sum() / x['Pwear'].sum(), include_groups=False)
+        )
         hourly_enmo_IMP_variables = {
-            f'enmo_mean_hour{hour}_IMP': hourly_enmo_means.get(hour, np.nan) for hour in range(1, 25)
+            f'enmo_mean_hour{hour}_IMP': weighted_hourly_means_IMP.get(hour, np.nan) for hour in range(1, 25)
         }
         summary_dict.update(hourly_enmo_IMP_variables)
 
@@ -634,9 +644,12 @@ def impute_data(df, time_resolution):
         }
         summary_dict.update(hourly_pwear_IMP_variables)
 
-        daily_enmo_means = df.groupby('dayofweek')['ENMO_mean'].mean()
+        weighted_daily_means_IMP = (
+            df.assign(weighted_daily_ENMO_IMP=df['ENMO_mean'] * df['Pwear']).groupby('dayofweek')
+            .apply(lambda x: x['weighted_daily_ENMO_IMP'].sum() / x['Pwear'].sum(), include_groups=False)
+        )
         daily_enmo_IMP_variables = {
-            f'enmo_mean_day{day}_IMP': daily_enmo_means.get(day, np.nan) for day in range(1, 8)
+            f'enmo_mean_day{day}_IMP': weighted_daily_means_IMP.get(day, np.nan) for day in range(1, 8)
         }
         summary_dict.update(daily_enmo_IMP_variables)
 
