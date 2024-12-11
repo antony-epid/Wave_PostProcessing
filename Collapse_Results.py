@@ -183,6 +183,9 @@ def creating_headers(file_id, collapse_level, file_path, file_name):
                          'device', 'file_start_error', 'file_end_error', 'calibration_method', 'noise_cutoff',
                          'qc_first_battery_pct', 'qc_last_battery_pct', 'frequency', 'TIME_RESOLUTION']
 
+    if config.PROCESSING.lower() == 'wave' and collapse_level == 'daily':
+        generic_variables.extend(['processing_epoch'])
+
     # Adding generic variables when collapsing to summary level
     if collapse_level == 'summary':
         generic_variables.extend(['startdate', 'RecordLength', 'processing_epoch', 'generic_first_timestamp', 'generic_last_timestamp'])
