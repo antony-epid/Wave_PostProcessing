@@ -67,15 +67,13 @@ if __name__ == '__main__':
         print_message("COMPLETING GENERIC EXHAUSTIVE ANALYSIS")
         run_script("GENERIC_exh_postprocessing.py")
 
-    # Running the Collapse_Results_ToSummary script:
-    if RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'yes':
-        print_message("COLLAPSING DATA TO INDIVIDUAL SUMMARY FILES")
-        run_script("Collapse_Results_ToSummary.py")
-
-    # Running the Collapse_Results_ToDaily script:
-    if RUN_COLLAPSE_RESULTS_TO_DAILY.lower() == 'yes':
-        print_message("COLLAPSING DATA TO INDIVIDUAL DAILY FILES")
-        run_script("Collapse_Results_ToDaily.py")
+    # Running the Collapse_Results script (to Summary and/or Daily:
+    if RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'yes' or RUN_COLLAPSE_RESULTS_TO_DAILY.lower() == 'yes':
+        if RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'yes':
+            print_message("COLLAPSING DATA TO INDIVIDUAL SUMMARY FILES")
+        if RUN_COLLAPSE_RESULTS_TO_DAILY.lower() == 'yes':
+            print_message("COLLAPSING DATA TO INDIVIDUAL DAILY FILES")
+        run_script("Collapse_Results.py")
 
     # Running the Append_Summary_Files script:
     if RUN_APPEND_SUMMARY_FILES.lower() == 'yes':
