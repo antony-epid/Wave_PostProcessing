@@ -37,7 +37,7 @@ venv_python = sys.executable
 
 # Running script:
 def run_script(script):
-    filelist_script_path = os.path.join(config.ANALYSIS_FOLDER, script)
+    filelist_script_path = os.path.join(config.ROOT_FOLDER, config.ANALYSIS_FOLDER, script)
     if not os.path.exists(filelist_script_path):
         print(f"Error: The script {filelist_script_path} does not exist.")
         return
