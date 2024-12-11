@@ -12,6 +12,7 @@ import config
 from datetime import timedelta
 import numpy as np
 import statsmodels.api as sm
+import Wave_PostProcessingOrchestra
 
 
 ##################
@@ -124,15 +125,18 @@ def creating_dummy(df, file_id, time_resolution):
     return row_count, flag_valid_total
 
 
-def trimmed_dataset(df, file_id, time_resolution):
+def trimmed_dataset(df, file_id, time_resolution, output_trimmed_df):
 
     if row_count > 1 and flag_valid_total != 1:
         df.drop(columns='temp_flag_no_valid_days').sort_values(by=['file_id', 'DATETIME'])
 
-        # Outputting dataset
-        os.makedirs(trimmed_path, exist_ok=True)
-        file_name = os.path.join(trimmed_path, f"{file_id}_TRIMMED_{config.count_prefixes}.csv")
-        df.to_csv(file_name, index=False)
+        if output_trimmed_df == 'Yes':
+            # Outputting dataset
+            os.makedirs(trimmed_path, exist_ok=True)
+            file_name = os.path.join(trimmed_path, f"{file_id}_TRIMMED_{config.count_prefixes}.csv")
+            df.to_csv(file_name, index=False)
+        else:
+            pass
 
         # Generating day number and day change:
         df['day_number'] = 1
@@ -173,12 +177,20 @@ def trimmed_dataset(df, file_id, time_resolution):
 
 
 # CREATING DATASET WITH JUST HEADERS, TO FILL IN WITH DATA LATER ON
-def creating_headers(file_id):
+def creating_headers(file_id, collapse_level, file_path, file_name):
+    # Creating generic variables (used both for wave and pampro output)
+    generic_variables = ['id',
+                         'device', 'file_start_error', 'file_end_error', 'calibration_method', 'noise_cutoff',
+                         'qc_first_battery_pct', 'qc_last_battery_pct', 'frequency', 'TIME_RESOLUTION']
 
-    generic_variables = ['id', 'startdate', 'RecordLength',
-                         'device', 'file_start_error', 'file_end_error', 'calibration_method', 'noise_cutoff', 'processing_epoch',
-                         'generic_first_timestamp', 'generic_last_timestamp', 'qc_first_battery_pct', 'qc_last_battery_pct', 'frequency', 'TIME_RESOLUTION']
+    # Adding generic variables when collapsing to summary level
+    if collapse_level == 'summary':
+        generic_variables.extend(['startdate', 'RecordLength', 'processing_epoch', 'generic_first_timestamp', 'generic_last_timestamp'])
 
+    if collapse_level == 'daily':
+        generic_variables.extend(['DATE', 'day_number', 'dayofweek'])
+
+    # Creating generic variables used for both wave and pampro output (used both in summary and daily level)
     enmo_variables = ['enmo_mean', 'enmo_0plus', 'enmo_1plus', 'enmo_2plus', 'enmo_3plus', 'enmo_4plus', 'enmo_5plus', 'enmo_10plus', 'enmo_15plus', 'enmo_20plus', 'enmo_25plus', 'enmo_30plus', 'enmo_35plus',
                          'enmo_40plus', 'enmo_45plus', 'enmo_50plus', 'enmo_55plus', 'enmo_60plus', 'enmo_65plus', 'enmo_70plus', 'enmo_75plus', 'enmo_80plus', 'enmo_85plus', 'enmo_90plus',
                          'enmo_95plus', 'enmo_100plus', 'enmo_105plus', 'enmo_110plus', 'enmo_115plus', 'enmo_120plus', 'enmo_125plus', 'enmo_130plus', 'enmo_135plus', 'enmo_140plus',
@@ -186,6 +198,7 @@ def creating_headers(file_id):
                          'enmo_240plus', 'enmo_250plus', 'enmo_260plus', 'enmo_270plus', 'enmo_280plus', 'enmo_290plus', 'enmo_300plus', 'enmo_400plus', 'enmo_500plus', 'enmo_600plus',
                          'enmo_700plus', 'enmo_800plus', 'enmo_900plus', 'enmo_1000plus', 'enmo_2000plus', 'enmo_3000plus', 'enmo_4000plus']
 
+    # Creating hpfvm variables only if this is not specified to be dropped (both wave and pampro - summary and daily)
     hpfvm_variables = ['hpfvm_mean', 'hpfvm_0plus', 'hpfvm_1plus', 'hpfvm_2plus', 'hpfvm_3plus', 'hpfvm_4plus', 'hpfvm_5plus', 'hpfvm_10plus', 'hpfvm_15plus', 'hpfvm_20plus', 'hpfvm_25plus', 'hpfvm_30plus', 'hpfvm_35plus',
                          'hpfvm_40plus', 'hpfvm_45plus', 'hpfvm_50plus', 'hpfvm_55plus', 'hpfvm_60plus', 'hpfvm_65plus', 'hpfvm_70plus', 'hpfvm_75plus', 'hpfvm_80plus', 'hpfvm_85plus', 'hpfvm_90plus',
                          'hpfvm_95plus', 'hpfvm_100plus', 'hpfvm_105plus', 'hpfvm_110plus', 'hpfvm_115plus', 'hpfvm_120plus', 'hpfvm_125plus', 'hpfvm_130plus', 'hpfvm_135plus', 'hpfvm_140plus',
@@ -193,35 +206,59 @@ def creating_headers(file_id):
                          'hpfvm_240plus', 'hpfvm_250plus', 'hpfvm_260plus', 'hpfvm_270plus', 'hpfvm_280plus', 'hpfvm_290plus', 'hpfvm_300plus', 'hpfvm_400plus', 'hpfvm_500plus', 'hpfvm_600plus',
                          'hpfvm_700plus', 'hpfvm_800plus', 'hpfvm_900plus', 'hpfvm_1000plus', 'hpfvm_2000plus', 'hpfvm_3000plus', 'hpfvm_4000plus']
 
-    pwear_variables = ['Pwear', 'Pwear_morning', 'Pwear_noon', 'Pwear_afternoon', 'Pwear_night', 'Pwear_wkday', 'Pwear_wkend',
-                         'Pwear_morning_wkday', 'Pwear_noon_wkday', 'Pwear_afternoon_wkday', 'Pwear_night_wkday',
-                         'Pwear_morning_wkend', 'Pwear_noon_wkend', 'Pwear_afternoon_wkend', 'Pwear_night_wkend']
+    # Creating pwear variables (both wave and pampro - summary and daily)
+    pwear_variables = ['Pwear', 'Pwear_morning', 'Pwear_noon', 'Pwear_afternoon', 'Pwear_night']
 
+    # Adding pwear variables when collapsing to summary level
+    if collapse_level == 'summary':
+        pwear_variables.extend(['Pwear_wkday', 'Pwear_wkend',
+                         'Pwear_morning_wkday', 'Pwear_noon_wkday', 'Pwear_afternoon_wkday', 'Pwear_night_wkday',
+                         'Pwear_morning_wkend', 'Pwear_noon_wkend', 'Pwear_afternoon_wkend', 'Pwear_night_wkend'])
+
+    # Creating one list of variables with all variables from above
     list_of_variables = generic_variables + enmo_variables + pwear_variables
-    
+    # hpfvm variables added to list of variables if this is not dropped (specified in config file)
     if not any(item.lower() == "hpfvm" for item in config.VARIABLES_TO_DROP):
         list_of_variables += hpfvm_variables
 
+    # Adding extra generic variables if processed through pampro
     if config.PROCESSING.lower() == 'pampro':
         list_of_variables += ['mf_start_error', 'mf_end_error', 'calibration_type']
+        # daily and hourly enmo and pwear variable headers are created if procesed through pampro and only for summary level
+        if collapse_level == 'summary':
+            pwear_days = [f'pwear_day{day}' for day in range(1, 8)]
+            pwear_hours = [f'pwear_hour{hour}' for hour in range(1, 25)]
+            enmo_days = [f'enmo_mean_day{day}' for day in range(1, 8)]
+            enmo_hours = [f'enmo_mean_hour{hour}' for hour in range(1, 25)]
+            list_of_variables += pwear_days + pwear_hours + enmo_days + enmo_hours
+            # Adding Daily and hourly hpfvm variables if not dropped
+            if not any(item.lower() == "hpfvm" for item in config.VARIABLES_TO_DROP):
+                hpfvm_days = [f'hpfvm_mean_day{day}' for day in range(1, 8)]
+                hpfvm_hours = [f'hpfvm_mean_hour{hour}' for hour in range(1, 25)]
+                list_of_variables += hpfvm_days + hpfvm_hours
+
+    # Creating headers if wanting to impute sleep data
+    if config.IMPUTE_DATA.lower() == 'yes':
         enmo_IMP_variables = [var + '_IMP' for var in enmo_variables]
         pwear_IMP_variables = [var + '_IMP' for var in pwear_variables]
-        pwear_days = [f'pwear_day{day}' for day in range(1, 8)]
-        pwear_hours = [f'pwear_hour{hour}' for hour in range(1, 25)]
-        enmo_days = [f'enmo_mean_day{day}' for day in range(1, 8)]
-        enmo_hours = [f'enmo_mean_hour{hour}' for hour in range(1, 25)]
-        all_IMP = [pwear_days, pwear_hours, enmo_days, enmo_hours]
+        list_of_variables += enmo_IMP_variables + pwear_IMP_variables
+        # Creating headers for hpfvm imputed if not dropped
         if not any(item.lower() == "hpfvm" for item in config.VARIABLES_TO_DROP):
             hpfvm_IMP_variables = [var + '_IMP' for var in hpfvm_variables]
-            hpfvm_days = [f'hpfvm_mean_day{day}' for day in range(1, 8)]
-            hpfvm_hours = [f'hpfvm_mean_hour{hour}' for hour in range(1, 25)]
-            all_IMP += [hpfvm_days, hpfvm_hours]
-        IMP_variables = [var + '_IMP' for sublist in all_IMP for var in sublist]
-        list_of_variables += config.ANOM_VAR_PAMPRO + enmo_IMP_variables + pwear_IMP_variables + pwear_days + pwear_hours + enmo_days + enmo_hours + IMP_variables
+            list_of_variables += hpfvm_IMP_variables
 
-        if not any(item.lower() == "hpfvm" for item in config.VARIABLES_TO_DROP):
+        # Imputing daily and hourly pwear and enmo mean if processed through pampro and collapsing to summary level (and for hpfvm variables if not dropped)
+        if config.PROCESSING.lower() == 'pampro' and collapse_level == 'summary':
+            all_IMP = [pwear_days, pwear_hours, enmo_days, enmo_hours]
+            # Adding daily and hourly hpfvm IMP if not dropped
+            if not any(item.lower() == "hpfvm" for item in config.VARIABLES_TO_DROP):
+                all_IMP += [hpfvm_days, hpfvm_hours]
 
-            list_of_variables += hpfvm_days + hpfvm_hours + hpfvm_IMP_variables
+            IMP_variables = [var + '_IMP' for sublist in all_IMP for var in sublist]
+            list_of_variables += IMP_variables
+
+    if config.PROCESSING.lower() == 'pampro':
+        list_of_variables += config.ANOM_VAR_PAMPRO
 
     if config.PROCESSING.lower() == 'wave':
         list_of_variables.extend(['qc_anomalies_total'])
@@ -234,13 +271,13 @@ def creating_headers(file_id):
 
     # Outputting empty dataframe
     os.makedirs(summary_files_path, exist_ok=True)
-    file_name = os.path.join(summary_files_path, f"{file_id}_{config.SUM_OVERALL_MEANS}.csv")
+    file_name = os.path.join(file_path, f"{file_id}_{file_name}.csv")
     headers_df.to_csv(file_name, index=False)
 
     return headers_df
 
 # INPUTTING DATA TO THE EMPTY DATAFRAME
-def input_data(df, time_resolution):
+def input_data(df, time_resolution, collapse_level):
 
     if df is not None and not df.empty:
         # Creating id variable if it doesn't already exist
@@ -306,9 +343,14 @@ def input_data(df, time_resolution):
             qc_anomaly_d_value = first_row_data['Anom_D']
             qc_anomaly_e_value = first_row_data['Anom_E']
             qc_anomaly_f_value = first_row_data['Anom_F']
+        if collapse_level == 'daily':
+            file_id_value = first_row_data['file_id']
+            startdate_value = first_row_data['DATE']
+            day_number_value = first_row_data['day_number']
+            day_of_week = first_row_data['dayofweek']
 
         # Adding the summary variables to the empty dataframe
-        summary_dict = {
+        dictionary = {
             'id': file_id_value,
             'startdate': startdate_value,
             'device': device_value,
@@ -335,7 +377,7 @@ def input_data(df, time_resolution):
                 'qc_anomaly_f': qc_anomaly_f_value,
                 'qc_anomaly_g': qc_anomaly_g_value
             }
-            summary_dict.update(wave_dict)
+            dictionary.update(wave_dict)
 
         if config.PROCESSING.lower() == 'pampro':
             pampro_dict = {
@@ -349,7 +391,7 @@ def input_data(df, time_resolution):
                 'Anom_E': qc_anomaly_e_value,
                 'Anom_F': qc_anomaly_f_value,
             }
-            summary_dict.update(pampro_dict)
+            dictionary.update(pampro_dict)
 
         if config.USE_WEAR_LOG.lower() == 'yes':
             wear_log_dict = {
@@ -360,80 +402,99 @@ def input_data(df, time_resolution):
                 'flag_missing_starthour': flag_missing_starthour_value,
                 'flag_missing_endhour': flag_missing_endhour_value
             }
-            summary_dict.update(wear_log_dict)
+            dictionary.update(wear_log_dict)
 
-        return summary_dict
+        if collapse_level == 'daily':
+            daily_level_dict ={
+            'id': file_id_value,
+            'DATE': startdate_value,
+            'day_number': day_number_value,
+            'dayofweek': day_of_week
+            }
+            dictionary.update(daily_level_dict)
+        return dictionary
 
 
 # CREATING PWEAR VARIABLES AND IMPUTTING TO THE EMPTY DATAFRAME
-def input_pwear_segment(df, summary_dict):
+def input_pwear_segment(df, dictionary, collapse_level):
     if df is not None and not df.empty:
 
         variables = [
             'Pwear', 'RecordLength',
-            'Pwear_morning', 'Pwear_noon', 'Pwear_afternoon', 'Pwear_night',
-            'Pwear_morning_wkday', 'Pwear_noon_wkday', 'Pwear_afternoon_wkday', 'Pwear_night_wkday',
+            'Pwear_morning', 'Pwear_noon', 'Pwear_afternoon', 'Pwear_night']
+
+        if collapse_level == 'summary':
+            variables.extend(['Pwear_morning_wkday', 'Pwear_noon_wkday', 'Pwear_afternoon_wkday', 'Pwear_night_wkday',
             'Pwear_morning_wkend', 'Pwear_noon_wkend', 'Pwear_afternoon_wkend', 'Pwear_night_wkend',
-            'Pwear_wkday', 'Pwear_weekend'
-            ]
+            'Pwear_wkday', 'Pwear_weekend'])
 
         results = {var: np.nan for var in variables}
 
         results['PWear'] = df['Pwear'].sum() / formula
         PWear_count = df['Pwear'].notna().sum()
         RecordLength = PWear_count * formula
-        summary_dict['RecordLength'] = RecordLength
+        dictionary['RecordLength'] = RecordLength
 
         # PWear variables by quadrants
         Pwear_by_quad = {}
+
+        # Defining quad variables
+        quad_morning_hours = (df['hourofday'] > 0) & (df['hourofday'] <= 6)
+        quad_noon_hours = (df['hourofday'] > 6) & (df['hourofday'] <= 12)
+        quad_afternoon_hours = (df['hourofday'] > 12) & (df['hourofday'] <= 18)
+        quad_night_hours = (df['hourofday'] > 18) & (df['hourofday'] <= 24)
+        quadrants = ['morning', 'noon', 'afternoon', 'night']
+        quad_variables = [quad_morning_hours, quad_noon_hours, quad_afternoon_hours, quad_night_hours]
+
 
         for quad, variables in zip(quadrants, quad_variables):
             Pwear_sum = df.loc[variables, 'Pwear'].sum()
             quadrant = f'Pwear_{quad}'
             Pwear_by_quad[quadrant] = Pwear_sum/formula
-            summary_dict[quadrant] = Pwear_by_quad[quadrant]
+            dictionary[quadrant] = Pwear_by_quad[quadrant]
 
-        # PWear variables by weekend/weekday
-        PWear_wkday = df[df['wkday'] == 1]['Pwear'].sum()/formula
-        PWear_wkend = df[df['wkend'] == 1]['Pwear'].sum()/formula
+        if collapse_level == 'summary':
+            # PWear variables by weekend/weekday
+            PWear_wkday = df[df['wkday'] == 1]['Pwear'].sum()/formula
+            PWear_wkend = df[df['wkend'] == 1]['Pwear'].sum()/formula
 
-        summary_dict['Pwear_wkday'] = PWear_wkday
-        summary_dict['Pwear_wkend'] = PWear_wkend
+            dictionary['Pwear_wkday'] = PWear_wkday
+            dictionary['Pwear_wkend'] = PWear_wkend
 
-        #PWear variables by quadrant and weekend/weekday
-        day_types = ['wkday', 'wkend']
+            #PWear variables by quadrant and weekend/weekday
+            day_types = ['wkday', 'wkend']
 
-        Pwear_by_quad_daytime = {}
-        for day_type in day_types:
-            for quad, variables in zip(quadrants, quad_variables):
-                condition = variables & (df[day_type] == 1)
-                Pwear_sum = df.loc[condition, 'Pwear'].sum()
-                key = f'Pwear_{quad}_{day_type}'
-                Pwear_by_quad_daytime[key] = Pwear_sum / formula
+            Pwear_by_quad_daytime = {}
+            for day_type in day_types:
+                for quad, variables in zip(quadrants, quad_variables):
+                    condition = variables & (df[day_type] == 1)
+                    Pwear_sum = df.loc[condition, 'Pwear'].sum()
+                    key = f'Pwear_{quad}_{day_type}'
+                    Pwear_by_quad_daytime[key] = Pwear_sum / formula
 
-                summary_dict[key] = Pwear_by_quad_daytime[key]
+                    dictionary[key] = Pwear_by_quad_daytime[key]
 
-        return summary_dict
+        return dictionary
 
 
 # SUMMARISING HOURLY AND DAILY ENMO AND PWEAR VARIABLES
-def input_hourly_daily(df, summary_dict):
+def input_hourly_daily(df, dictionary):
     if df is not None and not df.empty:
 
         weighted_hourly_means = (
             df.assign(weighted_ENMO = df['ENMO_mean'] * df['Pwear']).groupby('hourofday')
-            .apply(lambda x: x['weighted_ENMO'].sum() / x['Pwear'].sum(), include_groups=False)
+            .apply(lambda x: x['weighted_ENMO'].sum() / x['Pwear'].sum() if x['Pwear'].sum() != 0 else 0, include_groups=False)
         )
         hourly_enmo_variables = {
             f'enmo_mean_hour{hour}': weighted_hourly_means.get(hour, np.nan) for hour in range(1, 25)
         }
-        summary_dict.update(hourly_enmo_variables)
+        dictionary.update(hourly_enmo_variables)
 
         hourly_pwear_sums = df.groupby('hourofday')['Pwear'].sum()
         hourly_pwear_variables = {
             f'pwear_hour{hour}': hourly_pwear_sums.get(hour, np.nan) for hour in range(1, 25)
         }
-        summary_dict.update(hourly_pwear_variables)
+        dictionary.update(hourly_pwear_variables)
 
 
         weighted_daily_means = (
@@ -443,41 +504,41 @@ def input_hourly_daily(df, summary_dict):
         daily_enmo_variables = {
             f'enmo_mean_day{day}': weighted_daily_means.get(day, np.nan) for day in range(1, 8)
         }
-        summary_dict.update(daily_enmo_variables)
+        dictionary.update(daily_enmo_variables)
 
         daily_pwear_sums = df.groupby('dayofweek')['Pwear'].sum()
         daily_pwear_variables = {
             f'pwear_day{day}': daily_pwear_sums.get(day, np.nan) for day in range(1, 8)
         }
-        summary_dict.update(daily_pwear_variables)
+        dictionary.update(daily_pwear_variables)
 
         if not any(item.lower() == "hpfvm" for item in config.VARIABLES_TO_DROP):
             hourly_hpfvm_means = df.groupby('hourofday')['HPFVM_mean'].mean()
             hourly_hpfvm_variables = {
                 f'hpfvm_mean_hour{hour}': hourly_hpfvm_means.get(hour, np.nan) for hour in range(1, 25)
             }
-            summary_dict.update(hourly_hpfvm_variables)
+            dictionary.update(hourly_hpfvm_variables)
 
             daily_hpfvm_means = df.groupby('dayofweek')['HPFVM_mean'].mean()
             daily_hpfvm_variables = {
                 f'hpfvm_mean_day{day}': daily_hpfvm_means.get(day, np.nan) for day in range(1, 8)
             }
-            summary_dict.update(daily_hpfvm_variables)
+            dictionary.update(daily_hpfvm_variables)
 
 
-        return summary_dict
+        return dictionary
 
 
 # SUMMARISING OUTPUT VARIABLES
-def input_output_variables(df, summary_dict, time_resolution):
+def input_output_variables(df, dictionary, time_resolution, inclusion_criteria):
     if df is not None and not df.empty:
 
         # ENMO MEAN
         filtered_df = df[(df['ENMO_mean'].notna()) & (df['Pwear'].notna()) & (df['Pwear'] > 0)]
         Pwear_sum = filtered_df['Pwear'].sum()
-        summary_dict['Pwear'] = Pwear_sum
+        dictionary['Pwear'] = Pwear_sum
 
-        if Pwear_sum / formula >= config.SUM_MIN_HOUR_INCLUSION:
+        if Pwear_sum / formula >= inclusion_criteria:
 
             X = filtered_df[['MORNING', 'MIDNIGHT']]
             Y = filtered_df['ENMO_mean']
@@ -485,23 +546,23 @@ def input_output_variables(df, summary_dict, time_resolution):
             weights = np.floor(time_resolution * filtered_df['Pwear'])
             model = sm.WLS(Y, X, weights=weights)
             results = model.fit()
-            summary_dict['enmo_mean'] = results.params['const']
+            dictionary['enmo_mean'] = results.params['const']
         
         # HPFVM 
         if not any(item.lower() == "hpfvm" for item in config.VARIABLES_TO_DROP):
             # HPFVM MEAN
             filtered_df = df[(df['HPFVM_mean'].notna()) & (df['Pwear'].notna()) & (df['Pwear'] > 0)]
             Pwear_sum = filtered_df['Pwear'].sum()
-            summary_dict['Pwear'] = Pwear_sum
+            dictionary['Pwear'] = Pwear_sum
 
-            if Pwear_sum / formula >= config.SUM_MIN_HOUR_INCLUSION:
+            if Pwear_sum / formula >= inclusion_criteria:
                 X = filtered_df[['MORNING', 'MIDNIGHT']]
                 Y = filtered_df['HPFVM_mean']
                 X = sm.add_constant(X)
                 weights = np.floor(time_resolution * filtered_df['Pwear'])
                 model = sm.WLS(Y, X, weights=weights)
                 results = model.fit()
-                summary_dict['hpfvm_mean'] = results.params['const']
+                dictionary['hpfvm_mean'] = results.params['const']
 
         # INTENSITY VARIABLES
         variable_prefix = 'ENMO_'
@@ -519,7 +580,7 @@ def input_output_variables(df, summary_dict, time_resolution):
                     threshold_subset = df[(df['Pwear'] > 0) & (df[column_name].notna())]
                     PWEAR_sum = threshold_subset['Pwear'].sum()
 
-                    if PWEAR_sum / formula >= config.SUM_MIN_HOUR_INCLUSION:
+                    if PWEAR_sum / formula >= inclusion_criteria:
                         X = threshold_subset[['MORNING', 'MIDNIGHT']]
                         Y = threshold_subset[column_name]
                         X = sm.add_constant(X)
@@ -527,69 +588,90 @@ def input_output_variables(df, summary_dict, time_resolution):
                         model = sm.WLS(Y, X, weights=weights)
                         results = model.fit()
                         column_name = column_name.lower()
-                        summary_dict[column_name] = results.params['const']
-        return summary_dict
+                        dictionary[column_name] = results.params['const']
+        return dictionary
 
 # IMPUTING SLEEP DATA
-def impute_data(df, time_resolution):
+def impute_data(df, time_resolution, dictionary, collapse_level, inclusion_criteria):
     if df is not None and not df.empty:
 
-        max_days = df['day_number'].max()
+        if collapse_level == 'summary':
+            max_days = df['day_number'].max()
+            for dayNum in range(1, max_days + 1):
+                subset_df = df[(df['day_number'] == dayNum) & (df['Pwear'] == 1)]
+                Pwear_sum = subset_df['Pwear'].sum()
+                if Pwear_sum > config.MIN_DAY_HOURS:
+                    for X in config.IMPUTE_HOURS:
+                        condition = (
+                                (df['hourofday'] == X) &
+                                (df['Pwear'] == 0) &
+                                (df['day_number'] == dayNum))
 
-        for dayNum in range(1, max_days + 1):
-            subset_df = df[(df['day_number'] == dayNum) & (df['Pwear'] == 1)]
+                        df.loc[condition, ['ENMO_mean', 'ENMO_0plus', 'Pwear']] = [0, 1, 1]
+
+        if collapse_level == 'daily':
+            subset_df = df[(df['Pwear'] == 1)]
             Pwear_sum = subset_df['Pwear'].sum()
             if Pwear_sum > config.MIN_DAY_HOURS:
                 for X in config.IMPUTE_HOURS:
                     condition = (
                             (df['hourofday'] == X) &
-                            (df['Pwear'] == 0) &
-                            (df['day_number'] == dayNum))
+                            (df['Pwear'] == 0))
 
                     df.loc[condition, ['ENMO_mean', 'ENMO_0plus', 'Pwear']] = [0, 1, 1]
 
         # Calculating Pwear Imputed variables by quadrants
-        summary_dict['Pwear_IMP'] = df['Pwear'].sum() / formula
+        dictionary['Pwear_IMP'] = df['Pwear'].sum() / formula
+
+        # Defining quad variables
+        quad_morning_hours = (df['hourofday'] > 0) & (df['hourofday'] <= 6)
+        quad_noon_hours = (df['hourofday'] > 6) & (df['hourofday'] <= 12)
+        quad_afternoon_hours = (df['hourofday'] > 12) & (df['hourofday'] <= 18)
+        quad_night_hours = (df['hourofday'] > 18) & (df['hourofday'] <= 24)
+        quadrants = ['morning', 'noon', 'afternoon', 'night']
+        quad_variables = [quad_morning_hours, quad_noon_hours, quad_afternoon_hours, quad_night_hours]
 
         Pwear_IMP_by_quad = {}
         for quad, variables in zip(quadrants, quad_variables):
             Pwear_IMP_sum = df.loc[variables, 'Pwear'].sum()
             quadrant = f'Pwear_{quad}_IMP'
             Pwear_IMP_by_quad[quadrant] = Pwear_IMP_sum / formula
-            summary_dict[quadrant] = Pwear_IMP_by_quad[quadrant]
+            dictionary[quadrant] = Pwear_IMP_by_quad[quadrant]
 
-        # PWear imputed variables by weekend/weekday
-        PWear_wkday_IMP = df[df['wkday'] == 1]['Pwear'].sum() / formula
-        PWear_wkend_IMP = df[df['wkend'] == 1]['Pwear'].sum() / formula
+        if collapse_level == 'summary':
 
-        summary_dict['Pwear_wkday_IMP'] = PWear_wkday_IMP
-        summary_dict['Pwear_wkend_IMP'] = PWear_wkend_IMP
+            # PWear imputed variables by weekend/weekday
+            PWear_wkday_IMP = df[df['wkday'] == 1]['Pwear'].sum() / formula
+            PWear_wkend_IMP = df[df['wkend'] == 1]['Pwear'].sum() / formula
 
-        # PWear imputed variables by quadrant and weekend/weekday
-        day_types = ['wkday', 'wkend']
-        Pwear_by_quad_daytime_IMP = {}
-        for day_type in day_types:
-            for quad, variables in zip(quadrants, quad_variables):
-                condition = variables & (df[day_type] == 1)
-                Pwear_sum_IMP = df.loc[condition, 'Pwear'].sum()
-                key = f'Pwear_{quad}_{day_type}_IMP'
-                Pwear_by_quad_daytime_IMP[key] = Pwear_sum_IMP / formula
+            dictionary['Pwear_wkday_IMP'] = PWear_wkday_IMP
+            dictionary['Pwear_wkend_IMP'] = PWear_wkend_IMP
 
-                summary_dict[key] = Pwear_by_quad_daytime_IMP[key]
+            # PWear imputed variables by quadrant and weekend/weekday
+            day_types = ['wkday', 'wkend']
+            Pwear_by_quad_daytime_IMP = {}
+            for day_type in day_types:
+                for quad, variables in zip(quadrants, quad_variables):
+                    condition = variables & (df[day_type] == 1)
+                    Pwear_sum_IMP = df.loc[condition, 'Pwear'].sum()
+                    key = f'Pwear_{quad}_{day_type}_IMP'
+                    Pwear_by_quad_daytime_IMP[key] = Pwear_sum_IMP / formula
+
+                    dictionary[key] = Pwear_by_quad_daytime_IMP[key]
 
         # ENMO MEAN imputed
         impute_enmo_df = df[
             (df['ENMO_mean'].notna()) & (df['Pwear'].notna()) & (df['Pwear'] > 0)]
         Pwear_sum = impute_enmo_df['Pwear'].sum()
 
-        if Pwear_sum / formula >= config.SUM_MIN_HOUR_INCLUSION:
+        if Pwear_sum / formula >= inclusion_criteria:
             X = impute_enmo_df[['MORNING', 'MIDNIGHT']]
             Y = impute_enmo_df['ENMO_mean']
             X = sm.add_constant(X)
             weights = np.floor(time_resolution * impute_enmo_df['Pwear'])
             model = sm.WLS(Y, X, weights=weights)
             results = model.fit()
-            summary_dict['enmo_mean_IMP'] = results.params['const']
+            dictionary['enmo_mean_IMP'] = results.params['const']
 
         if not any(item.lower() == "hpfvm" for item in config.VARIABLES_TO_DROP):
             # HPFVM MEAN imputed
@@ -597,14 +679,14 @@ def impute_data(df, time_resolution):
                 (df['HPFVM_mean'].notna()) & (df['Pwear'].notna()) & (df['Pwear'] > 0)]
             Pwear_sum = impute_hpfvm_df['Pwear'].sum()
 
-            if Pwear_sum / formula >= config.SUM_MIN_HOUR_INCLUSION:
+            if Pwear_sum / formula >= inclusion_criteria:
                 X = impute_hpfvm_df[['MORNING', 'MIDNIGHT']]
                 Y = impute_hpfvm_df['HPFVM_mean']
                 X = sm.add_constant(X)
                 weights = np.floor(time_resolution * impute_hpfvm_df['Pwear'])
                 model = sm.WLS(Y, X, weights=weights)
                 results = model.fit()
-                summary_dict['hpfvm_mean_IMP'] = results.params['const']
+                dictionary['hpfvm_mean_IMP'] = results.params['const']
 
         # INTENSITY VARIABLES
         variable_prefixes = 'ENMO_'
@@ -618,7 +700,7 @@ def impute_data(df, time_resolution):
                     threshold_subset = df[(df['Pwear'] > 0) & (df[column_name].notna())]
                     PWEAR_sum = threshold_subset['Pwear'].sum()
 
-                    if PWEAR_sum / formula >= config.SUM_MIN_HOUR_INCLUSION:
+                    if PWEAR_sum / formula >= inclusion_criteria:
                         X = threshold_subset[['MORNING', 'MIDNIGHT']]
                         Y = threshold_subset[column_name]
                         X = sm.add_constant(X)
@@ -626,60 +708,62 @@ def impute_data(df, time_resolution):
                         model = sm.WLS(Y, X, weights=weights)
                         results = model.fit()
                         column_name = f'{column_name.lower()}_IMP'
-                        summary_dict[column_name] = results.params['const']
+                        dictionary[column_name] = results.params['const']
 
-        # Hourly and daily Enmo and Pwear variables
-        weighted_hourly_means_IMP = (
-            df.assign(weighted_ENMO_IMP=df['ENMO_mean'] * df['Pwear']).groupby('hourofday')
-            .apply(lambda x: x['weighted_ENMO_IMP'].sum() / x['Pwear'].sum(), include_groups=False)
-        )
-        hourly_enmo_IMP_variables = {
-            f'enmo_mean_hour{hour}_IMP': weighted_hourly_means_IMP.get(hour, np.nan) for hour in range(1, 25)
-        }
-        summary_dict.update(hourly_enmo_IMP_variables)
-
-        hourly_pwear_sums = df.groupby('hourofday')['Pwear'].sum()
-        hourly_pwear_IMP_variables = {
-            f'pwear_hour{hour}_IMP': hourly_pwear_sums.get(hour, np.nan) for hour in range(1, 25)
-        }
-        summary_dict.update(hourly_pwear_IMP_variables)
-
-        weighted_daily_means_IMP = (
-            df.assign(weighted_daily_ENMO_IMP=df['ENMO_mean'] * df['Pwear']).groupby('dayofweek')
-            .apply(lambda x: x['weighted_daily_ENMO_IMP'].sum() / x['Pwear'].sum(), include_groups=False)
-        )
-        daily_enmo_IMP_variables = {
-            f'enmo_mean_day{day}_IMP': weighted_daily_means_IMP.get(day, np.nan) for day in range(1, 8)
-        }
-        summary_dict.update(daily_enmo_IMP_variables)
-
-        daily_pwear_sums = df.groupby('dayofweek')['Pwear'].sum()
-        daily_pwear_IMP_variables = {
-            f'pwear_day{day}_IMP': daily_pwear_sums.get(day, np.nan) for day in range(1, 8)
-        }
-        summary_dict.update(daily_pwear_IMP_variables)
-
-        if not any(item.lower() == "hpfvm" for item in config.VARIABLES_TO_DROP):
-            # Hourly and daily hpfvm variables
-            hourly_hpfvm_means = df.groupby('hourofday')['HPFVM_mean'].mean()
-            hourly_hpfvm_IMP_variables = {
-                f'hpfvm_mean_hour{hour}_IMP': hourly_hpfvm_means.get(hour, np.nan) for hour in range(1, 25)
+        if collapse_level == 'summary':
+            # Hourly and daily Enmo and Pwear variables
+            weighted_hourly_means_IMP = (
+                df.assign(weighted_ENMO_IMP=df['ENMO_mean'] * df['Pwear']).groupby('hourofday')
+                .apply(lambda x: x['weighted_ENMO_IMP'].sum() / x['Pwear'].sum(), include_groups=False)
+            )
+            hourly_enmo_IMP_variables = {
+                f'enmo_mean_hour{hour}_IMP': weighted_hourly_means_IMP.get(hour, np.nan) for hour in range(1, 25)
             }
-            summary_dict.update(hourly_hpfvm_IMP_variables)
+            dictionary.update(hourly_enmo_IMP_variables)
 
-            daily_hpfvm_means = df.groupby('dayofweek')['HPFVM_mean'].mean()
-            daily_hpfvm_IMP_variables = {
-                f'hpfvm_mean_day{day}_IMP': daily_hpfvm_means.get(day, np.nan) for day in range(1, 8)
+            hourly_pwear_sums = df.groupby('hourofday')['Pwear'].sum()
+            hourly_pwear_IMP_variables = {
+                f'pwear_hour{hour}_IMP': hourly_pwear_sums.get(hour, np.nan) for hour in range(1, 25)
             }
-            summary_dict.update(daily_hpfvm_IMP_variables)
+            dictionary.update(hourly_pwear_IMP_variables)
 
-        return summary_dict
+            weighted_daily_means_IMP = (
+                df.assign(weighted_daily_ENMO_IMP=df['ENMO_mean'] * df['Pwear']).groupby('dayofweek')
+                .apply(lambda x: x['weighted_daily_ENMO_IMP'].sum() / x['Pwear'].sum(), include_groups=False)
+            )
+            daily_enmo_IMP_variables = {
+                f'enmo_mean_day{day}_IMP': weighted_daily_means_IMP.get(day, np.nan) for day in range(1, 8)
+            }
+            dictionary.update(daily_enmo_IMP_variables)
+
+            daily_pwear_sums = df.groupby('dayofweek')['Pwear'].sum()
+            daily_pwear_IMP_variables = {
+                f'pwear_day{day}_IMP': daily_pwear_sums.get(day, np.nan) for day in range(1, 8)
+            }
+            dictionary.update(daily_pwear_IMP_variables)
+
+            if not any(item.lower() == "hpfvm" for item in config.VARIABLES_TO_DROP):
+                # Hourly and daily hpfvm variables
+                hourly_hpfvm_means = df.groupby('hourofday')['HPFVM_mean'].mean()
+                hourly_hpfvm_IMP_variables = {
+                    f'hpfvm_mean_hour{hour}_IMP': hourly_hpfvm_means.get(hour, np.nan) for hour in range(1, 25)
+                }
+                dictionary.update(hourly_hpfvm_IMP_variables)
+
+                daily_hpfvm_means = df.groupby('dayofweek')['HPFVM_mean'].mean()
+                daily_hpfvm_IMP_variables = {
+                    f'hpfvm_mean_day{day}_IMP': daily_hpfvm_means.get(day, np.nan) for day in range(1, 8)
+                }
+                dictionary.update(daily_hpfvm_IMP_variables)
+
+        return dictionary
 
 # Inputting data into headers dataframe and outputting summary_means dataset
-def output_summary_means(summary_dict, headers_df):
+def output_summary_means(dictionary, headers_df):
     if df is not None and not df.empty:
+
         # Adding the data from the summary dictionary into the empty dataframe (using the headers)
-        summary_data = pd.DataFrame([summary_dict], columns=headers_df.columns)
+        summary_data = pd.DataFrame([dictionary], columns=headers_df.columns)
 
         # Outputting summary dataframe
         os.makedirs(summary_files_path, exist_ok=True)
@@ -687,16 +771,39 @@ def output_summary_means(summary_dict, headers_df):
         summary_data.to_csv(file_name, index=False)
         return summary_data
 
+# Appending daily means so only one dataframe per id
+def append_daily_means(dictionary, headers_df, accumulated_dataframes):
+
+    # Converting dictionary to a single-row dataframe
+    daily_row = pd.DataFrame([dictionary], columns=headers_df.columns)
+
+    if file_id not in accumulated_dataframes:
+        accumulated_dataframes[file_id] = daily_row
+    else:
+        accumulated_dataframes[file_id] = pd.concat([accumulated_dataframes[file_id], daily_row], ignore_index=True)
+
+    return accumulated_dataframes
+
+
 
 # Creating data dictionary for all variables:
-def data_dic(headers_df):
+def data_dic(headers_df, collapse_level, file_path, dictionary_name):
 
     variable_label = {
         "id": "Study ID",
-        "startdate": "Date of first day of free-living recording",
-        "RecordLength": "Number of hours file was recording for",
-        "Pwear": "Time integral of wear probability based on ACC",
+        "Pwear": "Time integral of wear probability based on ACC"
     }
+    if collapse_level == 'summary':
+        variable_label.update({
+            "startdate": "Date of first day of free-living recording",
+            "RecordLength": "Number of hours file was recording for"
+        })
+    if collapse_level == 'daily':
+        variable_label.update({
+            "DATE": "Daily date of wear",
+            "day_number": "Consecutive day number in recording",
+            "dayofweek": "Day of week for index time period"
+        })
 
     quadrants = ['morning', 'noon', 'afternoon', 'night']
     quad_morning_hours = "hourofday>0 & hourofday<=6"
@@ -706,10 +813,14 @@ def data_dic(headers_df):
     label = "Number of valid hrs during free-living"
 
     pwear_labels = {
+        "enmo_mean": "Average acceleration (milli-g)",
         "Pwear_morning": f"{label}, {quad_morning_hours}",
         "Pwear_noon": f"{label}, {quad_noon_hours}",
         "Pwear_afternoon": f"{label}, {quad_afternoon_hours}",
         "Pwear_night": f"{label}, {quad_night_hours}",
+    }
+    if collapse_level == 'summary':
+        pwear_labels.update({
         "Pwear_wkday": f"{label}, weekday",
         "Pwear_wkend": f"{label}, weekend day",
         "Pwear_morning_wkday": f"{label}, {quad_morning_hours}, weekday",
@@ -719,9 +830,8 @@ def data_dic(headers_df):
         "Pwear_morning_wkend": f"{label}, {quad_morning_hours}, weekend day",
         "Pwear_noon_wkend": f"{label}, {quad_morning_hours}, weekend day",
         "Pwear_afternoon_wkend": f"{label}, {quad_afternoon_hours}, weekend day",
-        "Pwear_night_wkend": f"{label}, {quad_night_hours}, weekend day",
-        "enmo_mean": "Average acceleration (milli-g)"
-    }
+        "Pwear_night_wkend": f"{label}, {quad_night_hours}, weekend day"
+        })
 
     variable_label.update(pwear_labels)
 
@@ -739,14 +849,18 @@ def data_dic(headers_df):
         "file_end_error": "File error after calibration (single file cal) (mg)",
         "calibration_method": "Calibration method applied (offset/scale/temp)",
         "noise_cutoff": "Treshold set for still bout detection (mg)",
-        "processing_epoch": "Epoch setting used when processing data (sec)",
-        "generic_first_timestamp": "Generic first data timestamp of collection",
-        "generic_last_timestamp": "Generic last data timestamp of download",
         "qc_first_battery_pct": "Battery percentage of device at beginning of data collection",
         "qc_last_battery_pct": "Battery percentage of device at end of data collection",
         "frequency": "Recording frequency in hz",
         "TIME_RESOLUTION": "Time resolution of processed data (minutes)",
     }
+
+    if collapse_level == 'summary':
+        calibration_labels.update({
+            "processing_epoch": "Epoch setting used when processing data (sec)",
+            "generic_first_timestamp": "Generic first data timestamp of collection",
+            "generic_last_timestamp": "Generic last data timestamp of download"
+        })
 
     variable_label.update(calibration_labels)
 
@@ -770,7 +884,7 @@ def data_dic(headers_df):
     df_labels = pd.DataFrame(list(variable_label.items()), columns=["Variable", "Label"])
 
     os.makedirs(summary_files_path, exist_ok=True)
-    file_name = os.path.join(summary_files_path, "Data_dictionary_summary_means.csv")
+    file_name = os.path.join(file_path, dictionary_name)
     df_labels.to_csv(file_name, index=False)
 
 # Calling the functions
@@ -786,42 +900,88 @@ if __name__ == '__main__':
 
     # Creating filelist to loop through each file individually:
     file_list = reading_filelist()
-    for file_id in file_list:
-        time_resolution, df = reading_part_proc(date_orig='DATETIME_ORIG')
+    if Wave_PostProcessingOrchestra.RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'yes':
+        for file_id in file_list:
+            time_resolution, df = reading_part_proc(date_orig='DATETIME_ORIG')
 
-        # Truncating data (depending on what is specified in config file) and creating dataframe if no valid data:
-        df = remove_data(df)
-        row_count, flag_valid_total = creating_dummy(df, file_id, time_resolution)
-        df = trimmed_dataset(df, file_id, time_resolution)
+            # Truncating data (depending on what is specified in config file) and creating dataframe if no valid data:
+            df = remove_data(df)
+            row_count, flag_valid_total = creating_dummy(df, file_id, time_resolution)
+            df = trimmed_dataset(df, file_id, time_resolution, output_trimmed_df='Yes')
 
-        # Creating empty dataframe with headers, to fill in with data later
-        headers_df = creating_headers(file_id)
+            # Creating empty dataframe with headers, to fill in with data later
+            summary_headers_df = creating_headers(file_id, collapse_level='summary', file_path=summary_files_path, file_name=config.SUM_OVERALL_MEANS)
 
-        # Summarizing data and inputting into dataframe
-        formula = 60 / time_resolution   # Formula used when creating data for dataframe
-        summary_dict = input_data(df, time_resolution)
+            # Summarizing data and inputting into dataframe
+            formula = 60 / time_resolution   # Formula used when creating data for dataframe
+            summary_dict = input_data(df, time_resolution, collapse_level='summary')
+            summary_dict = input_pwear_segment(df, summary_dict, collapse_level='summary')
 
-        # Defining quad variables
-        quad_morning_hours = (df['hourofday'] > 0) & (df['hourofday'] <= 6)
-        quad_noon_hours = (df['hourofday'] > 6) & (df['hourofday'] <= 12)
-        quad_afternoon_hours = (df['hourofday'] > 12) & (df['hourofday'] <= 18)
-        quad_night_hours = (df['hourofday'] > 18) & (df['hourofday'] <= 24)
-        quadrants = ['morning', 'noon', 'afternoon', 'night']
+            if config.PROCESSING.lower() == 'pampro':
+                summary_dict = input_hourly_daily(df, summary_dict)
+            summary_dict = input_output_variables(df, summary_dict, time_resolution, inclusion_criteria=config.SUM_MIN_HOUR_INCLUSION)
 
-        # Summarizing data and inputting into dataframe
-        quad_variables = [quad_morning_hours, quad_noon_hours, quad_afternoon_hours, quad_night_hours]
-        summary_dict = input_pwear_segment(df, summary_dict)
+            # Impute hours
+            if config.IMPUTE_DATA.lower() == 'yes':
+                summary_dict = impute_data(df, time_resolution, summary_dict, collapse_level='summary', inclusion_criteria=config.SUM_MIN_HOUR_INCLUSION)
 
-        if config.PROCESSING.lower() == 'pampro':
-            summary_dict = input_hourly_daily(df, summary_dict)
-        summary_dict = input_output_variables(df, summary_dict, time_resolution)
+            # Outputting summary means dataset
+            summary_data = output_summary_means(summary_dict, summary_headers_df)
 
-        # Impute hours
-        if config.IMPUTE_DATA.lower() == 'yes':
-            summary_dict = impute_data(df, time_resolution)
+        # Outputting data dictionary
+        data_dic(summary_headers_df, collapse_level='summary', file_path=summary_files_path, dictionary_name="Data_dictionary_summary_means.csv")
 
-        # Outputting summary means dataset
-        summary_data = output_summary_means(summary_dict, headers_df)
+    # Collapsing results to daily level if specified in orchestra file
+    if Wave_PostProcessingOrchestra.RUN_COLLAPSE_RESULTS_TO_DAILY.lower() == 'yes':
 
-    # Outputting data dictionary
-    data_dic(headers_df)
+        # Creating folder paths to save collapsed results daily level in
+        daily_files_path = create_path(config.INDIVIDUAL_DAILY_F)
+
+        # Creating folder if it doesn't already exist
+        create_folders(daily_files_path)
+
+        accumulated_dataframes = {}
+
+        # Looping through each file in the filelist:
+        for file_id in file_list:
+            time_resolution, daily_df = reading_part_proc(date_orig='DATETIME_ORIG')
+
+            # Truncating data (depending on what is specified in config file) and creating dataframe if no valid data:
+            daily_df = remove_data(daily_df)
+            row_count, flag_valid_total = creating_dummy(daily_df, file_id, time_resolution)
+            daily_df = trimmed_dataset(daily_df, file_id, time_resolution, output_trimmed_df='Yes' if Wave_PostProcessingOrchestra.RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'no' else 'No')
+
+            # Creating empty dataframe with headers, to fill in with data later
+            daily_headers_df = creating_headers(file_id, collapse_level='daily', file_path=daily_files_path, file_name=config.DAY_OVERALL_MEAN)
+
+            # Counting how many days in file to loop through each day:
+            DAY_MAX = daily_df['day_number'].max()
+            for day_number in range(1, DAY_MAX + 1):
+                day_df = daily_df[daily_df['day_number'] == day_number].copy()
+
+                # Creating daily summarized variables
+                if not day_df.empty:
+                    formula = 60 / time_resolution  # Formula used when creating data for dataframe
+                    daily_summary_dict = input_data(day_df, time_resolution, collapse_level='daily')
+                    daily_summary_dict = input_pwear_segment(day_df, daily_summary_dict, collapse_level='daily')
+                    daily_summary_dict = input_output_variables(day_df, daily_summary_dict, time_resolution, inclusion_criteria=config.DAY_MIN_HOUR_INCLUSION)
+
+                    # Impute hours
+                    if config.IMPUTE_DATA.lower() == 'yes':
+                        daily_summary_dict = impute_data(day_df, time_resolution, daily_summary_dict, collapse_level='daily', inclusion_criteria=config.DAY_MIN_HOUR_INCLUSION)
+
+                    # Appendinging daily means so only one file per id
+                    accumulated_dataframes = append_daily_means(daily_summary_dict, daily_headers_df, accumulated_dataframes)
+
+            # Outputting daily_means csv, one per id
+            if file_id in accumulated_dataframes and not accumulated_dataframes[file_id].empty:
+                os.makedirs(daily_files_path, exist_ok=True)
+                output_file = os.path.join(daily_files_path, f'{file_id}_{config.DAY_OVERALL_MEAN}.csv')
+                accumulated_dataframes[file_id].to_csv(output_file, index=False)
+
+        # Outputting data dictionary
+        data_dic(daily_headers_df, collapse_level='daily', file_path=daily_files_path,
+                 dictionary_name="Data_dictionary_daily_means.csv")
+
+
+
