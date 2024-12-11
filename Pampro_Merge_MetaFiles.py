@@ -57,10 +57,14 @@ def merge_meta(groups, variables):
 
         # Reading analysis_meta file
         analysis_df = pd.read_csv(file_paths['analysis_meta_file'])
+        if 'file_name' not in analysis_df:
+            analysis_df['file_filename'] = id
 
         # Merge with qc_meta
         qc_meta_df = pd.read_csv(file_paths['qc_meta_file'])
 
+        if 'file_name' not in qc_meta_df:
+            qc_meta_df['file_filename'] = id
         columns_to_keep = [col for col in qc_meta_df.columns if col.startswith('QC')] + ['file_filename']
         qc_meta_df = qc_meta_df[columns_to_keep]
         merged_df = pd.merge(analysis_df, qc_meta_df, how='outer', on='file_filename')
