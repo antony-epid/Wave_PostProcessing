@@ -75,20 +75,15 @@ if __name__ == '__main__':
             print_message("COLLAPSING DATA TO INDIVIDUAL DAILY FILES")
         run_script("Collapse_Results.py")
 
-    # Running the Append_Summary_Files script:
-    if RUN_APPEND_SUMMARY_FILES.lower() == 'yes':
-        print_message("APPENDING ALL INDIVIDUAL SUMMARY FILES TOGETHER")
-        run_script("Appending_Summary_Files.py")
-
-    # Running the Append_Daily_Files script:
-    if RUN_APPEND_DAILY_FILES.lower() == 'yes':
-        print_message("APPENDING ALL INDIVIDUAL DAILY FILES TOGETHER")
-        run_script("Appending_Daily_Files.py")
-
-    # Running the Append_Hourly_Files script:
-    if RUN_APPEND_HOURLY_FILES.lower() == 'yes':
-        print_message("APPENDING ALL INDIVIDUAL HOURLY FILES TOGETHER")
-        run_script("Appending_Hourly_Files.py")
+    # Running the Append_Files script (Appending summary and/or daily and/or hourly):
+    if RUN_APPEND_SUMMARY_FILES.lower() == 'yes' or RUN_APPEND_DAILY_FILES.lower() == 'yes' or RUN_APPEND_HOURLY_FILES.lower() == 'yes':
+        if RUN_APPEND_SUMMARY_FILES.lower() == 'yes':
+            print_message("APPENDING ALL INDIVIDUAL SUMMARY FILES TOGETHER")
+        if RUN_APPEND_DAILY_FILES.lower() == 'yes':
+            print_message("APPENDING ALL INDIVIDUAL DAILY FILES TOGETHER")
+        if RUN_APPEND_HOURLY_FILES.lower() == 'yes':
+            print_message("APPENDING ALL INDIVIDUAL HOURLY FILES TOGETHER")
+        run_script("Appending_Files.py")
 
     # Running the Verification_Checks script:
     if RUN_VERIFICATION_CHECKS.lower() == 'yes':
