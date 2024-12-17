@@ -9,6 +9,7 @@ import config
 import os
 import pandas as pd
 import Wave_PostProcessingOrchestra
+import numpy as np
 
 
 ############################################################################################################
@@ -162,6 +163,12 @@ def appending_no_analysis_files(no_analysis_files, appended_df, file_name):
 
         # appending the dataset from no_analysis with the ones that have analysis data.
         merged_df = pd.concat([appended_df, appended_no_analysis_df], ignore_index=True)
+
+        # Changing the variable valid into a boolean variable so missing values are set to FALSE
+        if 'valid' in merged_df.columns:
+            merged_df['valid'] = merged_df['valid'].replace('', np.nan)
+            merged_df['valid'] = merged_df['valid'].astype('bool', errors='ignore')
+
 
         # Outputting appended summary dataframe
         output_file_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.SUMMARY_FOLDER)
