@@ -164,6 +164,7 @@ def merging_data(files_list, metadata_dfs, datafiles_dfs, anomalies_df):
                 merged_df.drop(columns=['DATETIME_COPY', 'BST'], inplace=True)
 
             else:
+                merged_df.drop(columns=['DATETIME_COPY', 'BST'], inplace=True)
                 pass
 
         # Calculating DATE and TIME variables with new time
