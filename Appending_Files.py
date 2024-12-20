@@ -132,7 +132,7 @@ def appending_no_analysis_files(no_analysis_files, appended_df, file_name):
                 variables_to_keep.extend(['.*anom*.', '.*batt*.'])
             # Variables to keep if processed through Pampro
             if config.PROCESSING.lower() == 'pampro':
-                variables_to_keep.extend(['calibration_type'])
+                variables_to_keep.extend(['calibration_type', 'QC_axis_anomaly'])
 
             # Joining the variables to be able to use regular expression
             combined_variables = '|'.join(variables_to_keep)
