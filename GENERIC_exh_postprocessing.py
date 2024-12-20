@@ -38,7 +38,7 @@ def reading_metadata(files_list):
             if config.PROCESSING.lower() == 'wave':
                 extra_columns = ['start_error', 'end_error', 'QC_anomalies_total', 'QC_anomaly_A', 'QC_anomaly_B', 'QC_anomaly_C', 'QC_anomaly_D', 'QC_anomaly_E', 'QC_anomaly_F', 'QC_anomaly_G', 'processing_script']
             if config.PROCESSING.lower() == "pampro":
-                extra_columns = ['file_start_error', 'file_end_error', 'days_of_data_processed', 'mf_start_error', 'mf_end_error', 'calibration_type']
+                extra_columns = ['file_start_error', 'file_end_error', 'days_of_data_processed', 'mf_start_error', 'mf_end_error', 'calibration_type', 'QC_axis_anomaly']
             columns_to_keep.extend(extra_columns)
             metadata_df = metadata_df.reindex(columns=columns_to_keep)
 
