@@ -186,6 +186,9 @@ def creating_headers(file_id, collapse_level, file_path, file_name):
     if config.PROCESSING.lower() == 'wave' and collapse_level == 'daily':
         generic_variables.extend(['processing_epoch'])
 
+    if config.PROCESSING.lower() == 'pampro':
+        generic_variables.extend(['QC_axis_anomaly'])
+
     # Adding generic variables when collapsing to summary level
     if collapse_level == 'summary':
         generic_variables.extend(['startdate', 'RecordLength', 'processing_epoch', 'generic_first_timestamp', 'generic_last_timestamp'])
@@ -318,6 +321,7 @@ def input_data(df, time_resolution, collapse_level):
             mf_start_error_value = first_row_data['mf_start_error']
             mf_end_error_value = first_row_data['mf_end_error']
             calibration_type_value = first_row_data['calibration_type']
+            qc_axis_anomaly_value = first_row_data['QC_axis_anomaly']
         if config.USE_WEAR_LOG.lower() == 'yes':
             wear_log_start_value = first_row_data['start']
             wear_log_end_value = first_row_data['end']
@@ -393,6 +397,7 @@ def input_data(df, time_resolution, collapse_level):
                 'Anom_D': qc_anomaly_d_value,
                 'Anom_E': qc_anomaly_e_value,
                 'Anom_F': qc_anomaly_f_value,
+                'QC_axis_anomaly': qc_axis_anomaly_value
             }
             dictionary.update(pampro_dict)
 
