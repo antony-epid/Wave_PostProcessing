@@ -182,6 +182,7 @@ def appending_no_analysis_files(no_analysis_files, appended_df, file_name):
 if __name__ == '__main__':
     # Appending summary files
     if Wave_PostProcessingOrchestra.RUN_APPEND_SUMMARY_FILES.lower() == 'yes':
+        Wave_PostProcessingOrchestra.print_message("APPENDING ALL INDIVIDUAL SUMMARY FILES TOGETHER")
         summary_file_path = create_filelist(folder=config.INDIVIDUAL_SUM_F)
         summary_files_list = remove_files(output_file=config.SUM_OUTPUT_FILE)
         summary_appended_df = appending_files(summary_files_list, file_path=summary_file_path, append_level='summary')
@@ -190,6 +191,7 @@ if __name__ == '__main__':
 
     # Appending hourly trimmed files
     if Wave_PostProcessingOrchestra.RUN_APPEND_HOURLY_FILES.lower() == 'yes':
+        Wave_PostProcessingOrchestra.print_message("APPENDING ALL INDIVIDUAL HOURLY FILES TOGETHER")
         hourly_file_path = create_filelist(folder=config.INDIVIDUAL_TRIMMED_F)
         hourly_files_list = remove_files(output_file=config.HOUR_OUTPUT_FILE)
         hourly_appended_df = appending_files(hourly_files_list, file_path=hourly_file_path, append_level='hourly')
@@ -198,6 +200,7 @@ if __name__ == '__main__':
 
     # Appending daily files
     if Wave_PostProcessingOrchestra.RUN_APPEND_DAILY_FILES.lower() == 'yes':
+        Wave_PostProcessingOrchestra.print_message("APPENDING ALL INDIVIDUAL DAILY FILES TOGETHER")
         daily_file_path = create_filelist(folder=config.INDIVIDUAL_DAILY_F)
         daily_files_list = remove_files(output_file=config.DAY_OUTPUT_FILE)
         daily_appended_df = appending_files(daily_files_list, file_path=daily_file_path, append_level='daily')
