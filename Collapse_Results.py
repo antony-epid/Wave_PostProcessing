@@ -909,6 +909,7 @@ if __name__ == '__main__':
     # Creating filelist to loop through each file individually:
     file_list = reading_filelist()
     if Wave_PostProcessingOrchestra.RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'yes':
+        Wave_PostProcessingOrchestra.print_message("COLLAPSING DATA TO INDIVIDUAL SUMMARY FILES")
         for file_id in file_list:
             time_resolution, df = reading_part_proc(date_orig='DATETIME_ORIG')
 
@@ -941,6 +942,7 @@ if __name__ == '__main__':
 
     # Collapsing results to daily level if specified in orchestra file
     if Wave_PostProcessingOrchestra.RUN_COLLAPSE_RESULTS_TO_DAILY.lower() == 'yes':
+        Wave_PostProcessingOrchestra.print_message("COLLAPSING DATA TO INDIVIDUAL DAILY FILES")
 
         # Creating folder paths to save collapsed results daily level in
         daily_files_path = create_path(config.INDIVIDUAL_DAILY_F)
