@@ -141,7 +141,7 @@ def appending_no_analysis_files(no_analysis_files, appended_df, file_name):
 
             # Renaming variables
             no_analysis_metadata_df = no_analysis_metadata_df.rename(columns={'end_error': 'file_end_error', 'start_error': 'file_start_error', 'noise_cutoff_mg': 'noise_cutoff'})
-            variables_to_lower_case = [col for col in no_analysis_metadata_df.columns if col.startswith('QC_')]
+            variables_to_lower_case = [col for col in no_analysis_metadata_df.columns if col.startswith('QC_') and col != 'QC_axis_anomaly']
             lower_case_mapping = {col: col.lower() for col in variables_to_lower_case}
             no_analysis_metadata_df = no_analysis_metadata_df.rename(columns=lower_case_mapping)
 
