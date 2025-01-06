@@ -12,6 +12,10 @@ import subprocess
 import sys
 import config
 from colorama import Fore
+import Filelist_Generation
+import GENERIC_exh_postprocessing
+import Collapse_Results_ToSummary
+import Collapse_Results_ToDaily
 
 ################
 ### SWITCHES ###
@@ -21,8 +25,8 @@ from colorama import Fore
 RUN_PAMPRO_MERGE_METAFILES = 'No'           # This needs running if accelerometer files are processed through Pampro to merge metafiles into 1 for each person.
 RUN_PAMPRO_COLLATE_ANOMALIES = 'No'         # This needs running to include information on anomalies if files are processed through Pampro.
 RUN_FILELIST_GENERATION = 'No'              # Create a filelist of all Wave output files. Depending on what is specified in the config.py, this might be all available or only the new files (that are not in the appended summary file)
-RUN_GENERIC_EXH_POSTPROCESSING = 'Yes'       # Generic exhaustive post processing works through generic updates to the Wave output. This needs to be completed before collapsing any data.
-RUN_COLLAPSE_RESULTS_TO_SUMMARY = 'No'      # Takes the file created from exhaustive post processing and collapses it down to a summary (1 line) file. These are saved as individual files.
+RUN_GENERIC_EXH_POSTPROCESSING = 'No'       # Generic exhaustive post processing works through generic updates to the Wave output. This needs to be completed before collapsing any data.
+RUN_COLLAPSE_RESULTS_TO_SUMMARY = 'Yes'      # Takes the file created from exhaustive post processing and collapses it down to a summary (1 line) file. These are saved as individual files.
 RUN_COLLAPSE_RESULTS_TO_DAILY = 'No'        # Takes the file created from exhaustive post processing and collapses it down to a daily (1 line per day) file. These are saved as individual files.
 RUN_APPEND_SUMMARY_FILES = 'No'             # Appends together the individual summary level data files (created within the collapse results to summary file)
 RUN_APPEND_DAILY_FILES = 'No'               # Appends together the daily level data files (created within the collapse results to summary file)
@@ -58,24 +62,31 @@ if __name__ == '__main__':
             run_script("Pampro_Collate_Anomalies.py")
 
     # Running the Filelist_Generation script:
+    #!!!! use optional argument num_jobs, and make several filelists
     if RUN_FILELIST_GENERATION.lower() == 'yes':
         print_message("CREATING FILELIST")
-        run_script("Filelist_Generation.py")
+        #run_script("Filelist_Generation.py")
+        Filelist_Generation.create_folders()
+        Filelist_Generation.create_filelist()
+        Filelist_Generation.remove_files()
 
     # Running the GENERIC_EXH_POSTPROCESSING script:
     if RUN_GENERIC_EXH_POSTPROCESSING.lower() == 'yes':
         print_message("COMPLETING GENERIC EXHAUSTIVE ANALYSIS")
-        run_script("GENERIC_exh_postprocessing.py")
+        #run_script("GENERIC_exh_postprocessing.py")
+        GENERIC_exh_postprocessing.main()
 
     # Running the Collapse_Results_ToSummary script:
     if RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'yes':
         print_message("COLLAPSING DATA TO INDIVIDUAL SUMMARY FILES")
-        run_script("Collapse_Results_ToSummary.py")
+        #run_script("Collapse_Results_ToSummary.py")
+        Collapse_Results_ToSummary.main()
 
     # Running the Collapse_Results_ToDaily script:
     if RUN_COLLAPSE_RESULTS_TO_DAILY.lower() == 'yes':
         print_message("COLLAPSING DATA TO INDIVIDUAL DAILY FILES")
-        run_script("Collapse_Results_ToDaily.py")
+        #run_script("Collapse_Results_ToDaily.py")
+        Collapse_Results_ToDaily.main()
 
     # Running the Append_Summary_Files script:
     if RUN_APPEND_SUMMARY_FILES.lower() == 'yes':
