@@ -353,9 +353,7 @@ def data_dic(summary_dfs):
         file_name = os.path.join(file_path, "Data_dictionary_daily_means.csv")
         df_labels.to_csv(file_name, index=False)
 
-
-# Calling the functions
-if __name__ == '__main__':
+def main():
     files_list = reading_filelist()
     time_resolutions, dataframes = reading_part_proc(files_list)
     truncated_dataframes = remove_data(dataframes)
@@ -363,7 +361,11 @@ if __name__ == '__main__':
     trimmed_dfs = trimmed_dataset(truncated_dataframes, files_list, time_resolutions)
     summary_dataframes = creating_headers(files_list)
     summary_dfs = summarise_variables(files_list, trimmed_dfs, time_resolutions, summary_dataframes)
-    data_dic(summary_dfs)
+    data_dic(summary_dfs)    
+
+# Calling the functions
+if __name__ == '__main__':
+    main()
 
 
 

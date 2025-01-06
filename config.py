@@ -18,17 +18,16 @@ from datetime import date
 ########################################################################################################################
 
 # --- OVERALL VARIABLES THAT WORK ACROSS PYTHON FILES --- #
-PROJECT = "example_project_name"                # EDIT: Name of the project going through post processing. Do not use space (replace with _) E.g., study_name
+PROJECT = "FirstTest"                # EDIT: Name of the project going through post processing. Do not use space (replace with _) E.g., study_name
 REMOVE_THRESHOLDS = 'No'                        # EDIT: Set to 'Yes' if you want to remove ENMO thresholds (Wave produces these automatically. If not needed for study these can be removed). Set to 'No' if you want to keep them.
-PC_TYPE = "WINDOWS"                             # EDIT: Choice of "WINDOWS" or "MAC". Code runs slightly different on windows and mac.
+PC_TYPE = "LINUX"                             # EDIT: Choice of "WINDOWS" or "MAC". Code runs slightly different on windows and mac.
 count_prefixes = "1h"                           # DO NOT EDIT: Processing resolution. Specify what time resolutions you want. Normally "1h" (1m is not tested)
 PC_DATE = date.today().strftime("%d%b%Y")       # DO NOT EDIT.
 PROCESSING = 'Pampro'                             # EDIT: 'Wave' if files were processed through Wave or 'Pampro' if files were processed through Pampro.
 
-
 # --- FOLDERS --- #
-ROOT_FOLDER = 'example_file_path_project_folder'                                                    # EDIT: Root folder for the project
-ANALYSIS_FOLDER = '_analysis/Wave_PostProcessing-master'                                            # EDIT: Where the post-processing .py files are saved
+ROOT_FOLDER = '/rfs/project/rfs-Bl26eNcUDB8/users_writeable/antony_runs/TestWave'                                                    # EDIT: Root folder for the project
+ANALYSIS_FOLDER = '_analysis/'                                            # EDIT: Where the post-processing .py files are saved
 RESULTS_FOLDER = '_results'                                                                         # DO NOT EDIT BUT MAKE SURE _results FOLDER EXISTS IN ROOT_FOLDER: Where the wave outputs / results are saved
 RELEASES_FOLDER = '_releases'                                                                       # DO NOT EDIT BUT MAKE SURE _releases FOLDER EXISTS: Where the release files will be saved
 FEEDBACK_FOLDER = '_feedback'                                                                       # DO NOT EDIT BUT MAKE SURE _feedback FOLDER EXISTS: For the csv files used to create the feedback plot
@@ -42,7 +41,6 @@ INDIVIDUAL_DAILY_F = 'Individual_Daily_files'                                   
 INDIVIDUAL_TRIMMED_F = 'Individual_Trimmed_files'                                                   # DO NOT EDIT: Auto generated folder to contain all individual hourly trimmed files (found within _Summary_Files folder)
 TIME_RES_FOLDER = f"{count_prefixes}_level"                                                         # DO NOT EDIT: Auto generated folder for the specified time resolution (within each summary/daily/hourly folder)
 WEAR_LOG_FOLDER = '_analysis/trim_times'                                                           # EDIT: Name of folder were the wear log is saved in, if a wear log is used. Add the name of the sub-folder as well if the wear log is saved within a sub-folder in the root folder for the project.
-
 
 # --- HOUSEKEEPING --- #
 
@@ -62,10 +60,11 @@ ONLY_NEW_FILES = 'Yes'                               # EDIT: Set to 'No' if you 
 
 # --- GENERIC EXH POSTPROCESSING ADDITIONAL VARIABLES --- #
 # EDIT: Variables below can be adapted if you want to specify other variables to drop and if you wish to adjust for daylight saving times.
-VARIABLES_TO_DROP = []     # DO NOT EDIT: Specify what variables to drop (Normally this will be ["HPFVM", "PITCH", "ROLL"]). Not tested to run on HPFVM, PITCH and ROLL yet.
+#VARIABLES_TO_DROP = ["HPFVM", "PITCH", "ROLL"]      # DO NOT EDIT: Specify what variables to drop (Normally this will be ["HPFVM", "PITCH", "ROLL"]). Not tested to run on HPFVM, PITCH and ROLL yet.
+VARIABLES_TO_DROP = []      # DO NOT EDIT: Specify what variables to drop (Normally this will be ["HPFVM", "PITCH", "ROLL"]). Not tested to run on HPFVM, PITCH and ROLL yet.
 CLOCK_CHANGES = 'Yes'                               # EDIT: If set 'Yes' it will adjust data for daylight savings. Swith to 'No' if in a country without clock changes
 TIMEZONE = 'Europe/London'                          # EDIT: Change to the timezone data is collected in. To find correct name for timezone, in google type "pytz timezone" followed by the country (Or see list herehttps://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568)
-USE_WEAR_LOG = 'Yes'                              # EDIT: Set to 'Yes' if there is a wear log and to use only certain days (specified in wear log).
+USE_WEAR_LOG = 'No'                              # EDIT: Set to 'Yes' if there is a wear log and to use only certain days (specified in wear log).
 WEAR_LOG = 'example_wear_log'                           # EDIT: Name of wear log file if MERGE_WEAR_LOG is Yes.
 # DO NOT EDIT: Variables below do not need editing if you are happy with the standard file naming output.
 ANOMALIES_FILE = 'collapsed_anomalies.csv'          # DO NOT EDIT: Filename for collapsed anomalies files. This file is generated if data were processed through Pampro and if the Pampro_Collate_Anomalies are run (only if any anomalies are present in dataset)

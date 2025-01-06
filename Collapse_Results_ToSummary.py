@@ -31,16 +31,17 @@ def create_folders(folder_path):
         pass
 
 # READING IN FILELIST
-def reading_filelist():
+def reading_filelist(id=''):
     os.chdir(os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.FILELIST_FOLDER))
-    filelist_df = pd.read_csv('filelist.txt', delimiter='\t')  # Reading in the filelist
+    #filelist_df = pd.read_csv('filelist.txt', delimiter='\t')  # Reading in the filelist
+    filelist_df = pd.read_csv('filelist' + id + '.txt', delimiter='\t')  # Reading in the filelist    
     filelist_df = filelist_df.drop_duplicates(subset=['filename_temp'])
     file_list = filelist_df['filename_temp'].tolist()
     return file_list
 
 
 # LOOPING THROUGH EACH FILE FOR COLLAPSING
-def reading_part_proc(date_orig):
+def reading_part_proc(partPro_path, file_id, date_orig):
     part_proc_file_path = os.path.join(partPro_path, f"{file_id}_{config.OUTPUT_FILE_EXT}.csv")
     if os.path.exists(part_proc_file_path):
         df = pd.read_csv(part_proc_file_path)
@@ -84,7 +85,8 @@ def remove_data(df):
     return df
 
 # CREATING "DUMMY" DATASET (EMPTY) IF ALL TIMES FALL OUTSIDE WEAR LOG TIMES OR LESS THAN 1 HOUR DATA
-def creating_dummy(df, file_id, time_resolution):
+#def creating_dummy(df, file_id, time_resolution):
+def creating_dummy(df, file_id, time_resolution, summary_files_path, partPro_path):    
     row_count = len(df)
     flag_valid_total = df['temp_flag_no_valid_days'].min()
 
@@ -123,8 +125,10 @@ def creating_dummy(df, file_id, time_resolution):
 
     return row_count, flag_valid_total
 
-
-def trimmed_dataset(df, file_id, time_resolution):
+#def trimmed_dataset(df, file_id, time_resolution):
+def trimmed_dataset(df, file_id, time_resolution, trimmed_path):
+    row_count = len(df)
+    flag_valid_total = df['temp_flag_no_valid_days'].min()
 
     if row_count > 1 and flag_valid_total != 1:
         df.drop(columns='temp_flag_no_valid_days').sort_values(by=['file_id', 'DATETIME'])
@@ -173,8 +177,9 @@ def trimmed_dataset(df, file_id, time_resolution):
 
 
 # CREATING DATASET WITH JUST HEADERS, TO FILL IN WITH DATA LATER ON
-def creating_headers(file_id):
-
+#def creating_headers(file_id):
+def creating_headers(file_id, summary_files_path):
+    
     generic_variables = ['id', 'startdate', 'RecordLength',
                          'device', 'file_start_error', 'file_end_error', 'calibration_method', 'noise_cutoff', 'processing_epoch',
                          'generic_first_timestamp', 'generic_last_timestamp', 'qc_first_battery_pct', 'qc_last_battery_pct', 'frequency', 'TIME_RESOLUTION']
@@ -366,7 +371,8 @@ def input_data(df, time_resolution):
 
 
 # CREATING PWEAR VARIABLES AND IMPUTTING TO THE EMPTY DATAFRAME
-def input_pwear_segment(df, summary_dict):
+#def input_pwear_segment(df, summary_dict):
+def input_pwear_segment(df, summary_dict, formula, quadrants,quad_variables):    
     if df is not None and not df.empty:
 
         variables = [
@@ -469,7 +475,8 @@ def input_hourly_daily(df, summary_dict):
 
 
 # SUMMARISING OUTPUT VARIABLES
-def input_output_variables(df, summary_dict, time_resolution):
+#def input_output_variables(df, summary_dict, time_resolution):
+def input_output_variables(df, summary_dict, time_resolution, formula):
     if df is not None and not df.empty:
 
         # ENMO MEAN
@@ -531,7 +538,8 @@ def input_output_variables(df, summary_dict, time_resolution):
         return summary_dict
 
 # IMPUTING SLEEP DATA
-def impute_data(df, time_resolution):
+#def impute_data(df, time_resolution):
+def impute_data(df, time_resolution, summary_dict, formula, quadrants, quad_variables):
     if df is not None and not df.empty:
 
         max_days = df['day_number'].max()
@@ -676,7 +684,8 @@ def impute_data(df, time_resolution):
         return summary_dict
 
 # Inputting data into headers dataframe and outputting summary_means dataset
-def output_summary_means(summary_dict, headers_df):
+#def output_summary_means(summary_dict, headers_df):
+def output_summary_means(summary_dict, headers_df, df, summary_files_path, file_id):    
     if df is not None and not df.empty:
         # Adding the data from the summary dictionary into the empty dataframe (using the headers)
         summary_data = pd.DataFrame([summary_dict], columns=headers_df.columns)
@@ -689,8 +698,8 @@ def output_summary_means(summary_dict, headers_df):
 
 
 # Creating data dictionary for all variables:
-def data_dic(headers_df):
-
+#def data_dic(headers_df):
+def data_dic(headers_df, summary_files_path):
     variable_label = {
         "id": "Study ID",
         "startdate": "Date of first day of free-living recording",
@@ -774,7 +783,7 @@ def data_dic(headers_df):
     df_labels.to_csv(file_name, index=False)
 
 # Calling the functions
-if __name__ == '__main__':
+def main():
     # Creating folder paths user for this script
     trimmed_path = create_path(config.INDIVIDUAL_TRIMMED_F)
     summary_files_path = create_path(config.INDIVIDUAL_SUM_F)
@@ -785,17 +794,24 @@ if __name__ == '__main__':
     create_folders(summary_files_path)
 
     # Creating filelist to loop through each file individually:
-    file_list = reading_filelist()
+    #file_list = reading_filelist()
+    task_id = os.environ.get('SLURM_ARRAY_TASK_ID')
+    file_list = reading_filelist(str(int(task_id)-1))
+    print(f"Task ID: {task_id}; file list: {file_list}")     
+
     for file_id in file_list:
-        time_resolution, df = reading_part_proc(date_orig='DATETIME_ORIG')
+        time_resolution, df = reading_part_proc(partPro_path, file_id, date_orig='DATETIME_ORIG')
 
         # Truncating data (depending on what is specified in config file) and creating dataframe if no valid data:
         df = remove_data(df)
-        row_count, flag_valid_total = creating_dummy(df, file_id, time_resolution)
-        df = trimmed_dataset(df, file_id, time_resolution)
+        #row_count, flag_valid_total = creating_dummy(df, file_id, time_resolution)
+        row_count, flag_valid_total = creating_dummy(df, file_id, time_resolution,summary_files_path, partPro_path)        
+        #df = trimmed_dataset(df, file_id, time_resolution)
+        df = trimmed_dataset(df, file_id, time_resolution, trimmed_path)        
 
         # Creating empty dataframe with headers, to fill in with data later
-        headers_df = creating_headers(file_id)
+        #headers_df = creating_headers(file_id)
+        headers_df = creating_headers(file_id, summary_files_path)
 
         # Summarizing data and inputting into dataframe
         formula = 60 / time_resolution   # Formula used when creating data for dataframe
@@ -810,18 +826,28 @@ if __name__ == '__main__':
 
         # Summarizing data and inputting into dataframe
         quad_variables = [quad_morning_hours, quad_noon_hours, quad_afternoon_hours, quad_night_hours]
-        summary_dict = input_pwear_segment(df, summary_dict)
+        #summary_dict = input_pwear_segment(df, summary_dict)
+        summary_dict = input_pwear_segment(df, summary_dict, formula, quadrants,quad_variables)
 
         if config.PROCESSING.lower() == 'pampro':
             summary_dict = input_hourly_daily(df, summary_dict)
-        summary_dict = input_output_variables(df, summary_dict, time_resolution)
+        #summary_dict = input_output_variables(df, summary_dict, time_resolution)
+        summary_dict = input_output_variables(df, summary_dict, time_resolution, formula)
 
         # Impute hours
         if config.IMPUTE_DATA.lower() == 'yes':
-            summary_dict = impute_data(df, time_resolution)
+            #summary_dict = impute_data(df, time_resolution)
+            summary_dict = impute_data(df, time_resolution, summary_dict, formula, quadrants, quad_variables)    
 
         # Outputting summary means dataset
-        summary_data = output_summary_means(summary_dict, headers_df)
-
+        #summary_data = output_summary_means(summary_dict, headers_df)
+        summary_data = output_summary_means(summary_dict, headers_df, df, summary_files_path, file_id)
+    
     # Outputting data dictionary
-    data_dic(headers_df)
+    #data_dic(headers_df)
+    data_dic(headers_df, summary_files_path)
+
+
+# Calling the functions
+if __name__ == '__main__':
+    main()

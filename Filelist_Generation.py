@@ -54,11 +54,13 @@ def create_filelist():
         os.system('dir /b *csv > filelist.txt')
     elif config.PC_TYPE.lower() == "mac":
         os.system('ls /b *csv > filelist.txt')
-
+    elif config.PC_TYPE.lower() == "linux":
+        os.system('ls *csv > filelist.txt')
 
 # --- REMOVING FILES THAT ARE NEVER TO BE CONSOLIDATED --- #
 def remove_files():
     # Reading in the filelist
+    os.chdir(os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER))    
     filelist_df = pd.read_csv('filelist.txt', header=None, names=['v1'])
     filelist_df['file_type'] = filelist_df['v1']
 
@@ -137,8 +139,30 @@ def remove_files():
 
     filelist_df['serial'] = filelist_df.groupby('filename_temp').ngroup() + 1
     filelist_df.sort_values(by='serial', inplace=True)
-    output_file = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.FILELIST_FOLDER, 'filelist.txt')
-    filelist_df.to_csv(output_file, sep='\t', index=False)
+
+    num_splits=10
+
+    # Idea from the following for uniform distribution
+    #k, m = divmod(len(df), n)
+    #dfs = [df.iloc[i*k + min(i, m):(i+1)*k + min(i+1, m)] for i in range(n)]
+    #min(i, m) ensures that the first m parts have one extra row to handle the remainder.
+
+
+    # Calculate the size of each part
+    k, m = divmod(round(len(filelist_df)/2), num_splits)
+
+    # Create the list of DataFrames
+    filelist_dfs = [filelist_df.iloc[i*k*2 + min(i, m)*2:(i+1)*k*2 + min(i+1, m)*2] for i in range(num_splits)]
+
+    # Now filelist_dfs is a list of DataFrames
+    for i, filelist_df in enumerate(filelist_dfs):
+      #print(f"DataFrame {i+1}:\n{d}\n")
+
+      output_file = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.FILELIST_FOLDER, f'filelist{i}.txt')
+      filelist_df.to_csv(output_file, sep='\t', index=False)
+
+    #output_file = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.FILELIST_FOLDER, 'filelist.txt')
+    #filelist_df.to_csv(output_file, sep='\t', index=False)
 
 
 if __name__ == '__main__':
