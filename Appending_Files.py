@@ -125,7 +125,7 @@ def appending_no_analysis_files(no_analysis_files, appended_df, file_name):
             # Specifying what variables to keep
             variables_to_keep = [
                 '.*start_error*.', '.*end_error*.', 'calibration_method', 'noise_cutoff_mg',
-                'generic_first_timestamp', 'generic_last_timestamp', 'device', 'processing_epoch'
+                'generic_first_timestamp', 'generic_last_timestamp', 'device', 'processing_epoch', 'frequency'
             ]
             # Variables to keep if processed through Wave
             if config.PROCESSING.lower() == 'wave':
@@ -152,6 +152,9 @@ def appending_no_analysis_files(no_analysis_files, appended_df, file_name):
             # Formatting time stamp variables:
             generic_timestamps = ['generic_first_timestamp', 'generic_last_timestamp']
             no_analysis_metadata_df[generic_timestamps] = no_analysis_metadata_df[generic_timestamps].apply(lambda x: x.str[:19])
+
+            # Creating variable to flag files that were unable to process
+            no_analysis_metadata_df['flag_unable_to_process'] = 1
 
             no_analysis_dataframes.append(no_analysis_metadata_df)
 
