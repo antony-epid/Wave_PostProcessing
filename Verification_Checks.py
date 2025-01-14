@@ -180,7 +180,6 @@ def information_to_verif_log(log, df, table, variable_to_count, text_to_log, cou
     else:
         save_verif_log(log)
 
-####ADD HERE WHEN IMPUTING DATA TO ALSO CREATE INCLUDE = 2 AND THEN ALSO GETTING THESE OUT IN THE VERIF LOG
 # --- GENERATING INCLUDE CRITERIA --- ~
 def include_criteria(log, df, text_to_log, description):
     """
