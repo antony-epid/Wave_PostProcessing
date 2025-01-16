@@ -244,7 +244,7 @@ def pwear_variables(valid_dfs, time_resolutions):
         valid_df.loc[valid_df['ENMO_mean'] < 0, 'Pwear'] = 0
 
         # Looking for HPFVM/PITCH/ROLL/ENMO MEAN
-        variables_to_check = ["HPFVM", "PITCH", "ROLL", 'ENMO_mean']
+        variables_to_check = ["HPFVM_mean", "PITCH_mean", "ROLL_mean", 'ENMO_mean']
         for var in variables_to_check:
             if var in valid_df.columns:
                 valid_df.loc[valid_df['ENMO_n'] == 0, var] = None
