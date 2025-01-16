@@ -239,6 +239,16 @@ def pwear_variables(valid_dfs, time_resolutions):
         else:
             pass
 
+        #Checking if HPFVM_0plus exists and then convert to fractions of time
+        if 'HPFVM_0plus' in valid_df.columns:
+            variables_to_convert = [col for col in valid_df.columns if col.startswith('HPFVM_') and col.endswith('plus')]
+
+            for variable in variables_to_convert:
+                valid_df[variable] = (valid_df[variable] / (60/valid_df['processing_epoch'])) / time_resolution
+        else:
+            pass
+
+
         # Generating pwear variables and removing negative values
         valid_df['Pwear'] = valid_df['ENMO_0plus']
         valid_df.loc[valid_df['ENMO_mean'] < 0, 'Pwear'] = 0
