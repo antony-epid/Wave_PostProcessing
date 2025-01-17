@@ -47,9 +47,8 @@ WEAR_LOG_FOLDER = '_analysis/trim_times'                                        
 # --- HOUSEKEEPING --- #
 
 RUN_HOUSEKEEPING = 'Yes'        # EDIT: Set to 'Yes' if you have housekeeping script to drop any duplicates etc. Set to 'No' if you don't have a housekeeping script to run.
-RUN_CORRUPTIONS_HOUSEKEEPING = 'Yes'  # EDIT: Set to 'yes' if you have a corruptions housekeeping file to adjust pwear based on verification checks
-CORRUPTION_CONDITION_FILE_PATH = 'C:/Users/cas254/PycharmProjects/PostProcessing/corruptions_conditions.csv'  # EDIT: Edit to the file path for the corruptions_conditions filepath, this should include the name and file extension of the file itself. (e.g., corruptions_conditions.csv)
 RUN_CORRUPTIONS_HOUSEKEEPING = 'No'  # EDIT: Set to 'yes' if you have a corruptions housekeeping file to adjust pwear based on verification checks
+CORRUPTION_CONDITION_FILE_PATH = 'example_file_path/corruptions_conditions.csv'  # EDIT: Edit to the file path for the corruptions_conditions filepath, this should include the name and file extension of the file itself. (e.g., corruptions_conditions.csv)
 
 ###########################################################################
 # --- VARIABLES BELOW ARE SPECIFIC TO EACH PART OF THE POSTPROCESSING --- #
@@ -103,8 +102,10 @@ SUM_OUTPUT_FILE	= f'{PROJECT}_SUMMARY_MEANS'        # DO NOT EDIT: Output filena
 # DAILY
 DAY_OUTPUT_FILE	= f'{PROJECT}_DAILY_MEANS' 	        # DO NOT DIT: Output filename for the daily appended dataset.
 # HOURLY
-HOUR_OUTPUT_FILE = f'{PROJECT}_HOURLY_TRIMMED_MEANS' # DO NOT EDIT: Output filename for the hourly appended dataset.
-
+if count_prefixes == '1h':
+    HOUR_OUTPUT_FILE = f'{PROJECT}_HOURLY_TRIMMED_MEANS' # DO NOT EDIT: Output filename for the hourly appended dataset.
+if count_prefixes == '1m':
+    HOUR_OUTPUT_FILE = f'{PROJECT}_MINUTE_TRIMMED_MEANS'
 
 # --- VERIFICATION CHECKS --- #
 # DO NOT EDIT: All variables below do not need editing if you are happy with the name of verification log and using ENMO as standard variables to verify.
