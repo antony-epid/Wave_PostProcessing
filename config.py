@@ -49,6 +49,7 @@ WEAR_LOG_FOLDER = '_analysis/trim_times'                                        
 RUN_HOUSEKEEPING = 'Yes'        # EDIT: Set to 'Yes' if you have housekeeping script to drop any duplicates etc. Set to 'No' if you don't have a housekeeping script to run.
 RUN_CORRUPTIONS_HOUSEKEEPING = 'Yes'  # EDIT: Set to 'yes' if you have a corruptions housekeeping file to adjust pwear based on verification checks
 CORRUPTION_CONDITION_FILE_PATH = 'C:/Users/cas254/PycharmProjects/PostProcessing/corruptions_conditions.csv'  # EDIT: Edit to the file path for the corruptions_conditions filepath, this should include the name and file extension of the file itself. (e.g., corruptions_conditions.csv)
+RUN_CORRUPTIONS_HOUSEKEEPING = 'No'  # EDIT: Set to 'yes' if you have a corruptions housekeeping file to adjust pwear based on verification checks
 
 ###########################################################################
 # --- VARIABLES BELOW ARE SPECIFIC TO EACH PART OF THE POSTPROCESSING --- #
