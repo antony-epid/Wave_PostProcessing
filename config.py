@@ -118,7 +118,7 @@ VERIFY_VARS = ['enmo']                              # DO NOT EDIT: Variables use
 
 MIN_INCLUSION_HRS = 96                              # EDIT: Minimum number of hours recorded --> If below this it will be flagged as device stopped recording early
 PROTOCOL_FREQUENCY = 100                            # EDIT: Frequency the devices are set up to record data at for the study/ project. Keep as 100 if device is recording at 100 hz.
-
+CAL_ERROR = 13                                   # WAVE output: Do not edit, this should always be 13. PAMPRO output: This will normally be 13, but if different cut-off was selected doing processing, edit to this value.
 
 # --- PREPARING SUMMARY/HOURLY/DAILY RELEASES -- #
 # EDIT: In the variables below you can specify how many hours of wear a file need to be on summary and daily basis to count as valid.
