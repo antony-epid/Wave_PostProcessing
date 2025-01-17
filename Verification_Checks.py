@@ -849,6 +849,8 @@ def verif_impute_data(df):
     # Checking if FLAG_NO_VALID_DAYS is a variable in the dataframe and otherwise it will give it the value 0
     FLAG_NO_VALID_DAYS_exists = 'FLAG_NO_VALID_DAYS' in df.columns
     FLAG_NO_VALID_DAYS_condition = (df['FLAG_NO_VALID_DAYS'] != 1) if FLAG_NO_VALID_DAYS_exists else True
+    CALIBRATION_TYPE_exists = 'calibration_type' in df.columns
+    CALIBRATION_TYPE_condition = (df['calibration_type'] != 'fail') if CALIBRATION_TYPE_exists else True
 
     # include = 1 = Pwear and Pwear for all quadrants above threshold.
     df.loc[
@@ -858,7 +860,7 @@ def verif_impute_data(df):
         (df['Pwear_noon'] >= config.VER_PWEAR_QUAD) &
         (df['Pwear_afternoon'] >= config.VER_PWEAR_QUAD) &
         (df['Pwear_night'] >= config.VER_PWEAR_QUAD) &
-        (df['calibration_type'] != 'fail') &
+        (CALIBRATION_TYPE_condition) &
         (FLAG_NO_VALID_DAYS_condition), 'include'] = 1
 
     # 2 = Pwear above threshold and pwear for noon, afternoon and night above threshold (morning under, so we want to impute sleep)
@@ -869,7 +871,7 @@ def verif_impute_data(df):
         (df['Pwear_noon'] >= config.VER_PWEAR_QUAD) &
         (df['Pwear_afternoon'] >= config.VER_PWEAR_QUAD) &
         (df['Pwear_night'] >= config.VER_PWEAR_QUAD) &
-        (df['calibration_type'] != 'fail') &
+        (CALIBRATION_TYPE_condition) &
         (FLAG_NO_VALID_DAYS_condition) &
         (df['include'] != 1), 'include'] = 2
 
@@ -1025,9 +1027,9 @@ if __name__ == '__main__':
         )
 
         # Checking for any anomalies
-        variable_arg = ['qc_anomaly_g', 'qc_anomaly_f'] if config.PROCESSING.lower() == 'wave' else ['Anom_F']
+        variable_arg = ['QC_anomaly_G', 'QC_anomaly_F'] if config.PROCESSING.lower() == 'wave' else ['Anom_F']
         anomaly_column_number_arg = 4 if config.PROCESSING.lower() == 'wave' else 3
-        anomaly_list_headers_arg = ['id', 'device', 'qc_anomaly_g', 'qc_anomaly_f'] if config.PROCESSING.lower() == 'wave' else ['id', 'device', 'Anom_F']
+        anomaly_list_headers_arg = ['id', 'device', 'QC_anomaly_G', 'QC_anomaly_F'] if config.PROCESSING.lower() == 'wave' else ['id', 'device', 'Anom_F']
         verif_checks(
             comparison_operator=">",
             variable=variable_arg,
@@ -1151,10 +1153,10 @@ if __name__ == '__main__':
         # Getting summary statistics for ENMO variables (overall and only on data that meets the inclusion criteria)
         get_summary_stats(condition_operator="!=", df=summary_df, log=verif_log, variables=['enmo_0plus'], text_to_log="Overall summary statistics for enmo_0plus", description="enmo_0plus is the proportion of time spent above >= 0 milli-g. This should be ~1. This indicates how much the device has been worn for.",
  text_no_files="No observations to summarize")
-        get_summary_stats(condition_operator="!=", df=summary_df[summary_df['include'] == 1], log=verif_log, variables=['enmo_0plus'], text_to_log="Summary statistics for enmo_0plus where include==1", description="enmo_0plus is the proportion of time spent above >= 0 milli-g. This should be ~1. This indicates how much the device has been worn for.", text_no_files="No observations (include == 1) to summarize")
+        get_summary_stats(condition_operator="!=", df=summary_df[summary_df['include'] == 1], log=verif_log, variables=['enmo_0plus'], text_to_log="Summary statistics for enmo_0plus where include=1", description="enmo_0plus is the proportion of time spent above >= 0 milli-g. This should be ~1. This indicates how much the device has been worn for.", text_no_files="No observations (include == 1) to summarize")
         enmo_variables = [col for col in summary_df.columns if col.startswith('enmo_') and col.endswith('plus')]
         check_negative_values(df=summary_df, log=verif_log, text_to_log="There are negative values in the enmo_*plus variables.", description="Check to see if device has calibrated correctly. \n It is suggested to remove data/file if any negative values are present", variables= enmo_variables, text_no_error="There are no files with negative values in any of the enmo_variables. No files to check.")
-        check_negative_values(df=summary_df[summary_df['include'] == 1], log=verif_log, text_to_log="There are negative values in the enmo_*plus variables (and where include==1).", description="Check to see if device has calibrated correctly. \n It is suggested to remove data/file if any negative values are present", variables= enmo_variables, text_no_error="There are no files with negative values in any of the enmo_variables (and where include == 1). No files to check.")
+        check_negative_values(df=summary_df[summary_df['include'] == 1], log=verif_log, text_to_log="There are negative values in the enmo_*plus variables (and where include=1).", description="Check to see if device has calibrated correctly. \n It is suggested to remove data/file if any negative values are present", variables= enmo_variables, text_no_error="There are no files with negative values in any of the enmo_variables (and where include == 1). No files to check.")
 
         # Printing out of some files were unable to process (no_analysis_files)
         if 'flag_unable_to_process' in summary_df.columns:
@@ -1165,8 +1167,6 @@ if __name__ == '__main__':
 
         if config.IMPUTE_DATA.lower() == 'yes':
             summary_df = verif_impute_data(df=summary_df)
-
-            print(summary_df[['include', 'enmo_mean', 'enmo_mean_IMP']])
 
             print_impute_checks(df=summary_df[summary_df['include'] == 1], log=verif_log, text_to_log="Check imputed variables - check how much imputing variables effects enmo_mean",
                               description="include = 1: Pwear overall and Pwear for each quadrant are above criteria. Enmo and IMP variables should not differ:", variables=['enmo_mean', 'enmo_mean_IMP', 'sed_30', 'sed_30_IMP', 'lpa', 'lpa_IMP', 'mvpa_125', 'mvpa_125_IMP'],
