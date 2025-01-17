@@ -250,7 +250,8 @@ def pwear_variables(valid_dfs, time_resolutions):
 
 
         # Generating pwear variables and removing negative values
-        valid_df['Pwear'] = valid_df['ENMO_0plus']
+        pwear_columns = valid_df['ENMO_0plus'].copy()
+        valid_df = pd.concat([valid_df, pd.DataFrame({'Pwear': pwear_columns})], axis=1)
         valid_df.loc[valid_df['ENMO_mean'] < 0, 'Pwear'] = 0
 
         # Looking for HPFVM/PITCH/ROLL/ENMO MEAN
@@ -276,12 +277,16 @@ def wear_log(formatted_dfs):
 
         # Merging wear log with each file, merging on id
         for i, formatted_df in enumerate(formatted_dfs):
-            formatted_df['id'] = formatted_df['file_id'].apply(lambda x: x.split('_', 1)[0])
+            #formatted_df['id'] = formatted_df['file_id'].apply(lambda x: x.split('_', 1)[0])
+            id_series = formatted_df['file_id'].str.split('_', n=1).str[0]
+            formatted_df = pd.concat([formatted_df, pd.DataFrame({'id': id_series})], axis=1)
             formatted_df = pd.merge(formatted_df, wear_df, how='outer', on='id', indicator=True)
             formatted_df = formatted_df[formatted_df['_merge'] != 'right_only']
             formatted_df['day_valid'] = 0
+            formatted_df['flag_no_wear_info'] = 0
             if formatted_df['_merge'].iloc[0] == 'both':
                 formatted_df['day_valid'] = formatted_df.apply(lambda x: 1 if x['start'] <= x['DATETIME'] < x['end'] else 0, axis=1)
+
             if formatted_df['_merge'].iloc[0] == 'left_only':
                 formatted_df['flag_no_wear_info'] = 1
             formatted_df['day_valid'] = formatted_df.apply(lambda x: 2 if x['flag_no_wear_info'] == 1 else x['day_valid'], axis=1)
