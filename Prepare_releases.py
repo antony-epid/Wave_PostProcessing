@@ -102,6 +102,10 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
             # Checking if FLAG_NO_VALID_DAYS is a variable in the dataframe and otherwise it will give it the value 0
             FLAG_NO_VALID_DAYS_exists = 'FLAG_NO_VALID_DAYS' in df.columns
             FLAG_NO_VALID_DAYS_condition = (df['FLAG_NO_VALID_DAYS'] != 1) if FLAG_NO_VALID_DAYS_exists else True
+            CALIBRATION_TYPE_exists = 'calibration_type' in df.columns
+            CALIBRATION_TYPE_condition = (df['calibration_type'] != 'fail') if CALIBRATION_TYPE_exists else True
+            FLAG_AXIS_FAULT_exists = 'FLAG_AXIS_FAULT' in df.columns
+            FLAG_AXIS_FAULT_condition = (df['FLAG_AXIS_FAULT'] != 1) if FLAG_AXIS_FAULT_exists else True
 
             df.loc[
                 (df['Pwear'] >= pwear) &
@@ -109,19 +113,19 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
                 (df['Pwear_noon'] >= pwear_quad) &
                 (df['Pwear_afternoon'] >= pwear_quad) &
                 (df['Pwear_night'] >= pwear_quad) &
-                (df['calibration_type'] != 'fail') &
+                (CALIBRATION_TYPE_condition) &
                 (FLAG_NO_VALID_DAYS_condition) &
-                (df['FLAG_AXIS_FAULT'] != 1), 'include'] = 1
+                (FLAG_AXIS_FAULT_condition), 'include'] = 1
             df.loc[
                 (df['Pwear'] >= pwear) &
                 (df['Pwear_morning'] < pwear_morning) &
                 (df['Pwear_noon'] >= pwear_quad) &
                 (df['Pwear_afternoon'] >= pwear_quad) &
                 (df['Pwear_night'] >= pwear_quad) &
-                (df['calibration_type'] != 'fail') &
+                (CALIBRATION_TYPE_condition) &
                 (FLAG_NO_VALID_DAYS_condition) &
                 (df['include'] != 1) &
-                (df['FLAG_AXIS_FAULT'] != 1), 'include'] = 2
+                (FLAG_AXIS_FAULT_condition), 'include'] = 2
 
             df.loc[(df['include'] == 2), 'imputed'] = 1
 
@@ -183,19 +187,21 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
 
     # Changing order of variables for wave output
     if config.PROCESSING.lower() == 'wave':
-        columns_order.insert(columns_order.index('noise_cutoff'), columns_order.pop(columns_order.index('TIME_RESOLUTION')))
-        columns_order.insert(columns_order.index('qc_anomaly_g'), columns_order.pop(columns_order.index('first_file_timepoint')))
-        columns_order.insert(columns_order.index('first_file_timepoint'), columns_order.pop(columns_order.index('last_file_timepoint')))
+        if release_level != 'hourly':
+            columns_order.insert(columns_order.index('noise_cutoff'), columns_order.pop(columns_order.index('TIME_RESOLUTION')))
+        if release_level == 'summary' or release_level == 'hourly':
+            columns_order.insert(columns_order.index('QC_anomaly_G'), columns_order.pop(columns_order.index('first_file_timepoint')))
+            columns_order.insert(columns_order.index('first_file_timepoint'), columns_order.pop(columns_order.index('last_file_timepoint')))
         df = df[columns_order]
 
     # Changing variables names to lower case
-    if config.PROCESSING.lower() == 'pampro':
-        if release_level == 'hourly':
-            renaming_intensity_var = [col for col in df.columns if col.startswith('ENMO') or col.startswith('HPFVM') or col.startswith('PITCH') or col.startswith('ROLL')]
-            rename_mapping = {col: col.lower() for col in renaming_intensity_var}
-            df.rename(columns=rename_mapping, inplace=True)
+    if release_level == 'hourly':
+        renaming_intensity_var = [col for col in df.columns if col.startswith('ENMO') or col.startswith('HPFVM') or col.startswith('PITCH') or col.startswith('ROLL')]
+        rename_mapping = {col: col.lower() for col in renaming_intensity_var}
+        df.rename(columns=rename_mapping, inplace=True)
 
         # Changing order of variables for pampro output
+    if config.PROCESSING.lower() == 'pampro':
         type_order = ['consolidated', 'orig', 'IMP']
         intensity_variables = ['enmo', 'hpfvm']
 
@@ -353,6 +359,7 @@ def data_dictionary(df, filename, release_level, pwear, pwear_quad, append_level
             })
         if release_level == 'hourly':
             variable_label.update({
+                "file_id": "Id of original raw file",
                 "DATE": "Date",
                 "TIME": "Time",
                 "timestamp": "Date and time of index period",
@@ -529,15 +536,19 @@ def data_dictionary(df, filename, release_level, pwear, pwear_quad, append_level
             "device": "Device serial number",
             "file_start_error": "File error before calibration (single file cal) (mg)",
             "file_end_error": "File error after calibration (single file cal) (mg)",
+            "start_error": "File error before calibration (single file cal) (mg)",
+            "end_error": "File error after calibration (single file cal) (mg)",
             "calibration_method": "Calibration method applied (offset/scale/temp)",
             "TIME_RESOLUTION": "Time resolution of processed data (minutes)",
             "noise_cutoff": "Threshold set for still bout detection (mg)",
+            "noise_cutoff_mg": "Threshold set for still bout detection (mg)",
             "processing_epoch": "Epoch setting used when processing data (sec)",
             "frequency": "Recording frequency in hz",
             "FLAG_ANOMALY": "1 = Anomaly flagged in file",
             "FLAG_AXIS_FAULT": "1 = File had technical issue affecting integrity of data",
-            "first_file_timepoint": "First date timestamp of hdf5 file",
-            "last_file_timepoint": "Last date timestamp of hdf5 file"
+            "first_file_timepoint": "First date timestamp of file",
+            "last_file_timepoint": "Last date timestamp of file",
+            "temp_flag_no_valid_days": "1=No valid days in file."
         }
 
         # Generating metadata dictionary variables specific to Wave output
