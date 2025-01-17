@@ -1,11 +1,14 @@
 ############################################################################################################
-# This file is preparing summary releases
+# This file is preparing summary, daily and hourly release files
 # Author: CAS
-# Date: 12/07/2024
-# Version: 1.0 Translated from Stata code
+# Date: 02/01/2025
+# Version: 1.0 prepare hourly, daily and summary release files are merged into one script. This scripts can create 1 or all 3 release files. It can run on both output from Wave and Pampro.
 ############################################################################################################
 # IMPORTING PACKAGES #
 import os
+
+from numpy.ma.core import angle
+
 import config
 import pandas as pd
 from colorama import Fore
@@ -60,7 +63,7 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
             df.loc[df['FLAG_AXIS_FAULT'] == 1, col] = np.nan
 
 
-    # Soring dataset by id and day_number for daily release file
+    # Sorting dataset
     if release_level == 'summary':
         df = df.sort_values(by='id')
     if release_level == 'daily':
@@ -69,11 +72,11 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
         df = df.sort_values(by=['id', 'DATETIME'])
 
     # Renaming timestamp variables
-    if release_level == 'summary':
+    if release_level == 'summary' or release_level == 'daily':
         df.rename(columns={'generic_first_timestamp': 'first_file_timepoint', 'generic_last_timestamp': 'last_file_timepoint'}, inplace=True)
 
     # Dropping variables that are not needed for hourly releases
-    if release_level == 'hourly':
+    if release_level == 'hourly' and config.PROCESSING.lower() == 'wave':
         variables_to_drop = ['generic_first_timestamp', 'generic_last_timestamp', 'database_id', 'DATETIME_ORIG', 'subject_code', 'processing_script',
                              'prestart', 'postend', 'valid', 'freeday_number', 'serial', 'ENMO_n', 'ENMO_missing']
         df.drop(columns=variables_to_drop, inplace=True, errors='ignore')
@@ -82,11 +85,10 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
         df.loc[(df['ENMO_mean'] < 0), 'Pwear'] = 0
 
     # Generating include criteria
-    df['include'] = 0
+    if release_level == 'summary' or release_level == 'daily':
+        df['include'] = 0
 
-
-    if config.PROCESSING.lower() == 'wave':
-        if release_level == 'summary' or release_level == 'daily':
+        if config.IMPUTE_DATA.lower() == 'no':
             df.loc[
                 (df['Pwear'] >= pwear) &
                 (df['Pwear_morning'] >= pwear_morning) &
@@ -95,8 +97,7 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
                 (df['Pwear_night'] >= pwear_quad) &
                 (df['file_end_error'] <= df['noise_cutoff']), 'include'] = 1
 
-    if config.PROCESSING.lower() == 'pampro':
-        if release_level == 'summary' or release_level == 'daily':
+        if config.IMPUTE_DATA.lower() == 'yes':
 
             # Checking if FLAG_NO_VALID_DAYS is a variable in the dataframe and otherwise it will give it the value 0
             FLAG_NO_VALID_DAYS_exists = 'FLAG_NO_VALID_DAYS' in df.columns
@@ -125,60 +126,166 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
             df.loc[(df['include'] == 2), 'imputed'] = 1
 
         if release_level == 'summary' or release_level == 'daily':
-
             # Consolidation of all intensity variables
-            columns_to_change = [col for col in df.columns if ('enmo' in col or 'Pwear' in col) and not col.endswith('_IMP')]
+            search_pattern = ['Pwear', 'pwear', 'enmo', 'ENMO', 'hpfvm']
+            columns_to_change = [col for col in df.columns if any(col.startswith(pattern) for pattern in search_pattern) and not col.endswith('_IMP')]
+
             new_columns = {}
             for col in columns_to_change:
-                new_columns[f'{col}_orig'] = df[col]
+                original_col = f'{col}_orig'
+                new_columns[original_col] = df[col]
+                # Define the imputed and consolidated columns
                 imputed_col = f'{col}_IMP'
+                consolidated_col = f'{col}_consolidated'
+                # Generating imputed and colsolidated variables
                 if imputed_col in df.columns:
-                    df.loc[df['include'] == 2, col] = df[imputed_col]
+
+                    # Generating consolidated variables, which is the orig value if include is not 2, but the imputed if include = 2
+                    new_columns[consolidated_col] = np.where(
+                        df['include'] == 2,
+                        df[imputed_col],
+                        new_columns[original_col]
+                    )
 
             df = pd.concat([df, pd.DataFrame(new_columns)], axis=1)
 
-            # Generating sedentary, light and mvpa variables
-            types = ['', '_IMP']
-            for type_ in types:
-                for x in range(25, 40, 5):
-                    column_name = f'sed_{x}{type_}'
-                    df[column_name] = (1 - df[f'enmo_{x}plus{type_}']) * 1400
+            # Dropping the "original" variable after the _orig variable is created
+            not_to_drop = ['_orig', '_IMP', '_consolidated']
+            dropping_original_var = [col for col in df.columns if any(col.startswith(pattern) for pattern in search_pattern) and not any(col.endswith(end_pattern) for end_pattern in not_to_drop)]
 
-                light_name = f'lpa{type_}'
-                df[light_name] = (df[f'enmo_30plus{type_}'] - df[f'enmo_125plus{type_}']) * 1440
+            for col in dropping_original_var:
+                df.drop(columns=[col], inplace=True)
 
-                for x in range(100, 175, 25):
-                    mvpa_name = f'mvpa_{x}{type_}'
-                    df[mvpa_name] = df[f'enmo_{x}plus{type_}'] * 1400
+
+        # Renaming day variables to monday, tuesday etc. rather than 1, 2
+        day_mapping = {
+            'day1': 'monday',
+            'day2': 'tuesday',
+            'day3': 'wednesday',
+            'day4': 'thursday',
+            'day5': 'friday',
+            'day6': 'saturday',
+            'day7': 'sunday'
+        }
+
+        def replace_day(name, mapping):
+            for old, new in mapping.items():
+                name = name.replace(old, new)
+            return name
+
+        df.rename(columns=lambda x: replace_day(x, day_mapping), inplace=True)
 
     # Changing order or variables in dataframe
     columns = ['id'] + [col for col in df.columns if col != 'id']
     df = df[columns]
 
     columns_order = list(df.columns)
+
+    # Changing order of variables for wave output
     if config.PROCESSING.lower() == 'wave':
         columns_order.insert(columns_order.index('noise_cutoff'), columns_order.pop(columns_order.index('TIME_RESOLUTION')))
         columns_order.insert(columns_order.index('qc_anomaly_g'), columns_order.pop(columns_order.index('first_file_timepoint')))
         columns_order.insert(columns_order.index('first_file_timepoint'), columns_order.pop(columns_order.index('last_file_timepoint')))
         df = df[columns_order]
+
+    # Changing variables names to lower case
     if config.PROCESSING.lower() == 'pampro':
-        pwear_columns = [col for col in df.columns if col.startswith('Pwear') and not (col.endswith('orig') or col.endswith('IMP'))]
-        pwear_originals = [col for col in df.columns if col.startswith('Pwear') and col.endswith('orig')]
-        pwear_imputed = [col for col in df.columns if col.startswith('Pwear') and col.endswith('IMP')]
-        pwear_day_hour = [col for col in df.columns if col.startswith('pwear_day') or col.startswith('pwear_hour') and not (col.endswith('orig') or col.endswith('IMP'))]
-        pwear_day_hour_orig = [col for col in df.columns if (col.startswith('pwear_day') or col.startswith('pwear_hour')) and col.endswith('orig')]
-        pwear_day_hour_imp = [col for col in df.columns if (col.startswith('pwear_day') or col.startswith('pwear_hour')) and col.endswith('IMP')]
-        enmo_variables = [col for col in df if col.startswith('enmo') and col.endswith('plus')]
-        enmo_mean_orig = [col for col in df if col.startswith('enmo_mean') and col.endswith('orig')]
-        enmo_plus_orig = [col for col in df if col.startswith('enmo') and col.endswith('plus_orig')]
-        enmo_IMP = [col for col in df if col.startswith('enmo_mean') and col.endswith('IMP')]
+        if release_level == 'hourly':
+            renaming_intensity_var = [col for col in df.columns if col.startswith('ENMO') or col.startswith('HPFVM') or col.startswith('PITCH') or col.startswith('ROLL')]
+            rename_mapping = {col: col.lower() for col in renaming_intensity_var}
+            df.rename(columns=rename_mapping, inplace=True)
+
+        # Changing order of variables for pampro output
+        type_order = ['consolidated', 'orig', 'IMP']
+        intensity_variables = ['enmo', 'hpfvm']
+
+        def order_within_category(df, type, intensity_variables):
+            ordered_variables = []
+
+            pwear_columns = [col for col in df.columns if (col.startswith('Pwear') or col.startswith('pwear')) and (col.endswith(type))]
+            for intensity_var in intensity_variables:
+                if not any(col.startswith(intensity_var) for col in df.columns):
+                    continue
+                intensity_thresholds = [col for col in df.columns if col.startswith(intensity_var) and 'plus' in col and col.endswith(type)]
+                intensity_day = [col for col in df.columns if col.startswith(intensity_var) and 'day' in col and col.endswith(type)]
+                intensity_hour = [col for col in df.columns if col.startswith(intensity_var) and 'hour' in col and col.endswith(type)]
+                if intensity_var == 'enmo':
+                    ordered_variables.extend([*pwear_columns, f'{intensity_var}_mean_{type}', *intensity_thresholds, *intensity_day, *intensity_hour])
+                elif intensity_var == 'hpfvm':
+                    ordered_variables.extend([f'{intensity_var}_mean_{type}', *intensity_thresholds, *intensity_day, *intensity_hour])
+
+            return ordered_variables
+
+
         pampro_variables = ['id', 'filename']
         if release_level == 'summary':
             pampro_variables += ['startdate', 'RecordLength']
-        pampro_column_order = [*pampro_variables, *pwear_columns, *pwear_originals, *pwear_imputed, *pwear_day_hour, *pwear_day_hour_orig, *pwear_day_hour_imp, *enmo_variables,
-                               *enmo_mean_orig, *enmo_plus_orig, *enmo_IMP]
-        remaining_columns = [col for col in df if col not in pampro_column_order]
-        final_order = pampro_column_order + remaining_columns
+
+        if release_level == 'daily':
+            pampro_variables += ['DATE', 'day_number', 'dayofweek']
+
+        if release_level == 'hourly':
+            pampro_variables += ['timestamp', 'DATETIME', 'DATETIME_ORIG', 'DATE', 'TIME', 'dayofweek', 'hourofday']
+
+        pampro_column_order = pampro_variables
+
+        if release_level == 'summary' or release_level == 'daily':
+            for type in type_order:
+                pampro_column_order.extend(order_within_category(df, type, intensity_variables))
+
+        # Adding intensity variables and pitch and roll for hourly release file - only original variables
+        if release_level == 'hourly':
+            enmo_variables = [col for col in df.columns if col.startswith('enmo')]
+            if any(col.startswith('hpfvm') for col in df.columns):
+                hpfvm_columns = [col for col in df.columns if col.startswith('hpfvm')]
+            if any(col.startswith('pitch') for col in df.columns):
+                pitch_columns = [col for col in df.columns if col.startswith('pitch')]
+            if any(col.startswith('roll') for col in df.columns):
+                roll_columns = [col for col in df.columns if col.startswith('roll')]
+            hourly_variables = ['Pwear', *enmo_variables, *hpfvm_columns, *pitch_columns, *roll_columns]
+            pampro_column_order.extend(hourly_variables)
+
+            # Changing pitch and roll (if present in dataset) to be in proportion of time:
+            pitch_roll_var = []
+            if any(col.startswith('pitch') for col in df.columns):
+                pitch_roll_var += ['pitch']
+            if any(col.startswith('roll') for col in df.columns):
+                pitch_roll_var += ['roll']
+            if pitch_roll_var:
+                ends = ['mean', 'std', 'min', 'max']
+                for variable in pitch_roll_var:
+                    angle_variables = [col for col in df.columns if
+                                       col.startswith(variable) and not any(col.endswith(end) for end in ends)]
+                    for angle_var in angle_variables:
+                        if config.count_prefixes == '1h':
+                            df[angle_var] = df[angle_var] / 720
+                        if config.count_prefixes == '1m':
+                            df[angle_var] = df[angle_var] / 12
+
+
+        if release_level == 'summary' or release_level == 'daily' or release_level == 'hourly':
+            remaining_columns = ['first_file_timepoint', 'last_file_timepoint', 'device', 'FLAG_ANOMALY', *config.ANOM_VAR_PAMPRO,
+                             'FLAG_AXIS_FAULT', 'file_start_error', 'file_end_error', 'mf_start_error',
+                             'mf_end_error', 'calibration_type', 'calibration_method',
+                             'noise_cutoff', 'processing_epoch', 'frequency']
+
+            if release_level == 'summary' or release_level == 'daily':
+                noise_cutoff_index = remaining_columns.index('noise_cutoff')
+                remaining_columns.insert(noise_cutoff_index, 'TIME_RESOLUTION')
+                remaining_columns += ['include', 'imputed']
+
+            if release_level == 'hourly':
+                remaining_columns += ['Battery_mean', 'day_valid', 'days_of_data_processed', 'FLAG_MECH_NOISE', 'freeday_number',
+                                      'generic_first_timestamp', 'generic_last_timestamp', 'postend', 'prestart', 'Temperature_mean', 'valid']
+            if config.USE_WEAR_LOG.lower() == 'yes':
+                remaining_columns += ['start', 'end', 'flag_no_wear_info', 'flag_missing_starthour', 'flag_missing_endhour']
+
+            if 'flag_unable_to_process' in df.columns:
+                remaining_columns += ['flag_unable_to_process']
+            pampro_column_order.extend(remaining_columns)
+
+
+        final_order = pampro_column_order
         df = df[final_order]
 
     # --- SECTION TO RUN HOUSEKEEPING AND DROP FILES NOT NEEDED IN FINAL RELEASE --- #
@@ -199,6 +306,7 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
         filename_column = df['filename']
         filename_list = filename_column.tolist()
         unique_filename = sorted(set(filename_list))
+
 
         grouped = df.groupby('filename')['day_number'].count()
         print(Fore.YELLOW + "Filenames and rows/days per ID:" + Fore.RESET)
@@ -227,7 +335,7 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
 ####################################
 # --- CREATING DATA DICTIONARY --- #
 ####################################
-def data_dictionary(df, filename, release_level, pwear, pwear_quad):
+def data_dictionary(df, filename, release_level, pwear, pwear_quad, append_level):
     if df is not None and not df.empty:
         variable_label = {
             "id": "Study ID",
@@ -243,49 +351,180 @@ def data_dictionary(df, filename, release_level, pwear, pwear_quad):
                 "day_number": "Consecutive day number in recording",
                 "dayofweek": "day of week for index time period"
             })
-        variable_label.update({
-            "Pwear": "Time integral of wear probability based on ACC"
-        })
+        if release_level == 'hourly':
+            variable_label.update({
+                "DATE": "Date",
+                "TIME": "Time",
+                "timestamp": "Date and time of index period",
+                "DATETIME": "Date and time of index period",
+                "DATETIME_ORIG": "Date and time of index period (original)",
+                "dayofweek": "Day of the week for index time period",
+                "hourofday": "Hour of day for index period",
+                "Temperature_mean": "Average temperature (degrees celsius)",
+                "Battery_mean": "Average battery level",
+                "FLAG_MECH_NOISE": "1 = Flagged as mechanical enmo values. Pwear set to 0",
+                "Pwear": "Time integral of wear probability based on ACC",
+                "enmo_mean": "Average acceleration (milli-g)",
+                "enmo_n": "Epoch level count of how many data points are present).",
+                "enmo_missing": "Epoch level count of how many data points include non-wear",
+                "enmo_sum": "Sum of enmo (milli-g)",
+                "days_of_data_processed": "Total number of days of data processed per file",
+                "freeday_number": "Index for 24 hour wear periods relative to start of the measurement",
+                "generic_first_timestamp": "First date timestamp",
+                "generic_last_timestamp": "Last date timestamp",
+                "postend": "0=The timestamp is not after the last_file_timepoint. 1=The timestamp is after the last_file_timepoint. ",
+                "prestart": "0=Timestamp is not before the first_file_timepoint. 1=The timestamp is before the first_file_timepoint.",
+                "valid": "TRUE=The timestamp is valid (not before the first_file_timepoint and not after the last_file_timepoint. FALSE=The timestamp is not valid.",
+                "day_valid": "0=Timestamp is outside wear period specified in wear log. 1=Timestamp is within wear period specified in wear log. 2=No wear log."
+            })
+
+            if any(col.startswith('hpfvm') for col in df.columns):
+                variable_label.update({
+                    "hpfvm_mean": "Average acceleration (milli-g)",
+                    "hpfvm_n": "Number of 5 seconds epochs that the device was worn within the hour (This will be 720 if device was worn the whole time and Pwear=1).",
+                    "hpfvm_missing": "Number of 5 seconds epochs the device was NOT worn within the hour.",
+                    "hpfvm_sum": "Sum of hpfvm (milli-g)"
+                })
+
 
         quadrants = ['morning', 'noon', 'afternoon', 'night']
         quad_morning_hours = ">0 & <=6 hours"
         quad_noon_hours = ">6 & <=12 hours"
         quad_afternoon_hours = ">12 & <=18 hours"
         quad_night_hours = ">18 & <=24 hours"
-        label = "Number of valid hrs during free-living"
+        x = "Number of valid hrs during free-living"
 
-        pwear_labels = {
-            "Pwear_morning": f"{label}; {quad_morning_hours}",
-            "Pwear_noon": f"{label}; {quad_noon_hours}",
-            "Pwear_afternoon": f"{label}; {quad_afternoon_hours}",
-            "Pwear_night": f"{label}; {quad_night_hours}"}
-        if release_level == 'summary':
+        # Generating labels for all consolidated, original and imputed variables.
+        if config.IMPUTE_DATA.lower() == 'yes':
+            variable_type = ['consolidated', 'orig', 'IMP']
+            type_label = [' (consolidated)', ' (non-imputed)', ' (imputed)']
+        else:
+            variable_type = ['']
+            type_label = ['']
+
+        # Generating pwear labels for all quandrant + weekday variables:
+        all_pwear_labels = {}
+        for _type, label in zip(variable_type, type_label):
+            pwear_labels = {
+                f"Pwear_{_type}": f"Time integral of wear probability based on ACC {label}",
+                f"Pwear_morning_{_type}": f"{x}; {quad_morning_hours} {label}",
+                f"Pwear_noon_{_type}": f"{x}; {quad_noon_hours} {label}",
+                f"Pwear_afternoon_{_type}": f"{x}; {quad_afternoon_hours} {label}",
+                f"Pwear_night_{_type}": f"{x}; {quad_night_hours} {label}"}
+            if release_level == 'summary':
+                pwear_labels.update({
+                    f"Pwear_wkday_{_type}": f"{x}; weekday {label}",
+                    f"Pwear_wkend_{_type}": f"{x}; weekend day {label}",
+                    f"Pwear_morning_wkday_{_type}": f"{x}; {quad_morning_hours}; weekday {label}",
+                    f"Pwear_noon_wkday_{_type}": f"{x}; {quad_morning_hours}; weekday {label}",
+                    f"Pwear_afternoon_wkday_{_type}": f"{x}; {quad_afternoon_hours} weekday {label}",
+                    f"Pwear_night_wkday_{_type}": f"{x}; {quad_night_hours}; weekday {label}",
+                    f"Pwear_morning_wkend_{_type}": f"{x}; {quad_morning_hours}; weekend day {label}",
+                    f"Pwear_noon_wkend_{_type}": f"{x}; {quad_morning_hours}; weekend day {label}",
+                    f"Pwear_afternoon_wkend_{_type}": f"{x}; {quad_afternoon_hours}; weekend day {label}",
+                    f"Pwear_night_wkend_{_type}": f"{x}; {quad_night_hours}; weekend day {label}"})
+
+           # Generating enmo_mean and hpfvm mean variables for dictionary:
             pwear_labels.update({
-                "Pwear_wkday": f"{label}; weekday",
-                "Pwear_wkend": f"{label}; weekend day",
-                "Pwear_morning_wkday": f"{label}; {quad_morning_hours}; weekday",
-                "Pwear_noon_wkday": f"{label}; {quad_morning_hours}; weekday",
-                "Pwear_afternoon_wkday": f"{label}; {quad_afternoon_hours} weekday",
-                "Pwear_night_wkday": f"{label}; {quad_night_hours}; weekday",
-                "Pwear_morning_wkend": f"{label}; {quad_morning_hours}; weekend day",
-                "Pwear_noon_wkend": f"{label}; {quad_morning_hours}; weekend day",
-                "Pwear_afternoon_wkend": f"{label}; {quad_afternoon_hours}; weekend day",
-                "Pwear_night_wkend": f"{label}; {quad_night_hours}; weekend day"})
-        pwear_labels.update({
-            "enmo_mean": "Average acceleration (milli-g)"
-        })
+                f"enmo_mean_{_type}": f"Average acceleration (milli-g) {label} "
+            })
+            all_pwear_labels.update(pwear_labels)
 
-        variable_label.update(pwear_labels)
+            if any(col.startswith('hpfvm') for col in df.columns):
+                pwear_labels.update({
+                    f"hpfvm_mean_{_type}": f"Average acceleration (milli-g) {label}"
+                })
+            all_pwear_labels.update(pwear_labels)
+        variable_label.update(all_pwear_labels)
 
+        # Generating threshold dictionary variables for enmo and hpfvm variables
         if config.REMOVE_THRESHOLDS.lower() == 'no':
-            enmo_variables = [col for col in df.columns if col.startswith("enmo_") and col.endswith("plus")]
+            list_variables = ['enmo']
+            if any(col.startswith('hpfvm') for col in df.columns):
+                list_variables += ['hpfvm']
 
-            for variables in enmo_variables:
-                t1 = variables.replace("enmo_", "")
-                threshold = t1.replace("plus", "")
-                label = f"Proportion of time spent above >= {threshold} milli-g"
-                variable_label[variables] = label
+            for var in list_variables:
+                intensity_variables = [col for col in df.columns if col.startswith(var) and 'plus' in col]
+                for variables in intensity_variables:
+                    parts = variables.split('_')
+                    threshold_part = parts[1]
+                    threshold = threshold_part.replace("plus", "")
+                    label = f"Proportion of time spent above >= {threshold} milli-g"
+                    if variables.endswith("consolidated"):
+                        label+= " (consolidated)"
+                    if variables.endswith("orig"):
+                        label += " (non-imputed)"
+                    if variables.endswith("IMP"):
+                        label += " (imputed)"
+                    variable_label[variables] = label
 
+        # Adding pitch and roll variables to data dictionary
+        if release_level == 'hourly':
+            pitch_roll_var = []
+            if any(col.startswith('pitch') for col in df.columns):
+                pitch_roll_var += ['pitch']
+            if any(col.startswith('roll') for col in df.columns):
+                pitch_roll_var += ['roll']
+            if pitch_roll_var:
+                ends = ['mean', 'std', 'min', 'max']
+                for variable in pitch_roll_var:
+                    variable_label.update({
+                        f"{variable}_mean": f"Average {variable} angle (degrees)",
+                        f"{variable}_std": f"Standard deviation of the {variable} angle (degrees)",
+                        f"{variable}_min": f"Minimum {variable} angle (degrees)",
+                        f"{variable}_max": f"Maximum {variable} angle (degrees)"
+                    })
+                    Angle_variables = [col for col in df.columns if col.startswith(variable) and not any(col.endswith(end) for end in ends)]
+                    for angle_var in Angle_variables:
+                        split = angle_var.split('_', 1)
+                        threshold_part = split[1]
+
+                        # Split threshold part into 2 to determine if it should be a negative or positive value
+                        threshold_values = threshold_part.split('_')
+                        threshold_start = int(threshold_values[0])
+                        threshold_end = int(threshold_values[1])
+
+                        if threshold_start > threshold_end:
+                            threshold_part = f"-{threshold_start}_-{threshold_end}"
+                            if threshold_end == 0:
+                                threshold_part = f"-{threshold_start}_{threshold_end}"
+
+                        label = f"Proportion of time spent between {variable} angles {threshold_part} degrees"
+                        variable_label[angle_var] = label
+
+
+        # Generating day and hourly pwear, enmo and hpfvm dictionary variables
+        if config.PROCESSING.lower() == 'pampro':
+            # daily and hourly enmo and pwear variable are added to dictionary if procesed through pampro and only for summary level
+            if append_level == 'summary':
+                all_day_labels = {}
+                all_hour_labels = {}
+                days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+                hours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+                hour_specs = ['0:00-1:00', '1:00-2:00', '2:00-3:00', '3:00-4:00', '4:00-5:00', '5:00-6:00', '6:00-7:00',
+                             '7:00-8:00', '8:00-9:00', '9:00-10:00', '10:00-11:00', '11:00-12:00', '12:00-13:00', '13:00-14:00',
+                             '14:00-15:00', '15:00-16:00', '16:00-17:00', '17:00-18:00', '18:00-19:00', '19:00-20:00', '20:00-21:00',
+                             '21:00-22:00', '22:00-23:00', '23:00-0:00']
+                for var in list_variables:
+                    for _type, label in zip(variable_type, type_label):
+                        for day in days:
+                            day_labels = {
+                                f"pwear_{day}_{_type}" : f"Pwear by day of week ({day}) {label}",
+                                f"{var}_mean_{day}_{_type}" : f"{var} mean by day of week ({day}) {label}"
+                            }
+                            all_day_labels.update(day_labels)
+                        variable_label.update(all_day_labels)
+
+                        for hour, hour_spec in zip(hours, hour_specs):
+                            hour_labels = {
+                                f"pwear_hour{hour}_{_type}": f"Pwear by hour of day (hour {hour}) ({hour_spec}) {label}",
+                                f"{var}_mean_hour{hour}_{_type}": f"{var} mean by hour of day (hour {hour}) ({hour_spec}) {label}"
+                            }
+                            all_hour_labels.update(hour_labels)
+
+                        variable_label.update(all_hour_labels)
+
+        # Generating metadata dictionary variables
         calibration_labels = {
             "device": "Device serial number",
             "file_start_error": "File error before calibration (single file cal) (mg)",
@@ -294,9 +533,18 @@ def data_dictionary(df, filename, release_level, pwear, pwear_quad):
             "TIME_RESOLUTION": "Time resolution of processed data (minutes)",
             "noise_cutoff": "Threshold set for still bout detection (mg)",
             "processing_epoch": "Epoch setting used when processing data (sec)",
+            "frequency": "Recording frequency in hz",
+            "FLAG_ANOMALY": "1 = Anomaly flagged in file",
+            "FLAG_AXIS_FAULT": "1 = File had technical issue affecting integrity of data",
+            "first_file_timepoint": "First date timestamp of hdf5 file",
+            "last_file_timepoint": "Last date timestamp of hdf5 file"
+        }
+
+        # Generating metadata dictionary variables specific to Wave output
+        if config.PROCESSING.lower() == 'wave':
+            calibration_labels.update({
             "qc_first_battery_pct": "Battery percentage of device at beginning of data collection",
             "qc_last_battery_pct": "Battery percentage of device at end of data collection",
-            "frequency": "Recording frequency in hz",
             "qc_anomalies_total": "Total number of anomalies detected in the file",
             "qc_anomaly_a": "1 = Anomaly a flagged in file. Dealt with during processing.",
             "qc_anomaly_b": "1 = Anomaly b flagged in file. Dealt with during processing.",
@@ -304,27 +552,67 @@ def data_dictionary(df, filename, release_level, pwear, pwear_quad):
             "qc_anomaly_d": "1 = Anomaly d flagged in file. Dealt with during processing.",
             "qc_anomaly_e": "1 = Anomaly e flagged in file. Dealt with during processing.",
             "qc_anomaly_f": "1 = Anomaly f flagged in file. Dealt with during processing.",
-            "qc_anomaly_g": "1 = Anomaly g flagged in file. Dealt with during processing.",
-            "first_file_timepoint": "First date timestamp of hdf5 file",
-            "last_file_timepoint": "Last date timestamp of hdf5 file"}
+            "qc_anomaly_g": "1 = Anomaly g flagged in file. Dealt with during processing."
+            })
+
+        # Generating metadata dictionary variables specific to Pampro output
+        if config.PROCESSING.lower() == 'pampro':
+            anomalies = ['A', 'B', 'C', 'D', 'E', 'F']
+            anomalies_label = {}
+            for anom in anomalies:
+                anom_label = {f"Anom_{anom}": f"Anomaly {anom} flagged in file. Dealt with during processing"}
+                anomalies_label.update(anom_label)
+            calibration_labels.update(anomalies_label)
+
+        if config.PROCESSING.lower() == 'pampro':
+            calibration_labels.update({
+                "mf_start_error": "File error before calibration (multi file cal)  (mg)",
+                "mf_end_error": "File error after calibration (multi file cal) (mg)",
+                "calibration_type": "Type of calibration used: Single or Multi file"
+            })
 
         if release_level == 'summary' or release_level == 'daily':
-            calibration_labels.update({
-            "include": f'1=Pwear>={pwear} & all Pwear_quads>={pwear_quad}'
-            })
+            if config.IMPUTE_DATA.lower() == 'yes':
+                calibration_labels.update({
+                    "include": f'1=Pwear>={pwear} & all Pwear_quads>={pwear_quad}. 2=Pwear>={pwear}, pwear_morning<{pwear_quad} and pwear_noon/afternoon/night>={pwear_quad}.',
+                    "imputed": "1=Data imputed between 00:00-06:00 if not worn (proportional to Pwear)"
+                })
+            else:
+                calibration_labels.update({"include": f'1=Pwear>={pwear} & all Pwear_quads>={pwear_quad}'})
 
         variable_label.update(calibration_labels)
 
+        # Generating dictionary variables if a wear log was used
+        if config.USE_WEAR_LOG.lower() == 'yes':
+            wear_log_labels = {
+                "start": "Start datetime of the Wear Log",
+                "end": "End datetime of the Wear Log",
+                "flag_no_wear_info": "1=Did not have any wear log information",
+                "flag_missing_starthour": "Missing start hour in wear log",
+                "flag_missing_endhour": "Missing end hour in wear log"
+            }
+            variable_label.update(wear_log_labels)
+        variable_label.update({"flag_unable_to_process": "1=The file were unable to process (they did not have an hourly/minute level file). Only metadata is included in release."})
 
-        df_labels = pd.DataFrame(list(variable_label.items()), columns=["Variable", "variabel_label"])
+        # Ordering labels to match the order of the release file:
+        release_df_lower = {col.lower(): col for col in df.columns}
+        labels_df_lower = {key.lower(): value for key, value in variable_label.items()}
+
+        ordered_labels = {
+            release_df_lower[col.lower()]: labels_df_lower[col.lower()]
+            for col in df.columns if col.lower() in labels_df_lower
+        }
+
+        df_labels = pd.DataFrame(list(ordered_labels.items()), columns=["Variable", "variabel_label"])
 
         # Determine if variable is numeric
-        isnumeric = summary_df.dtypes.apply(lambda x: 1 if pd.api.types.is_numeric_dtype(x) else 0).reset_index()
+        isnumeric = df.dtypes.apply(lambda x: 1 if pd.api.types.is_numeric_dtype(x) else 0).reset_index()
         isnumeric.columns = ['Variable', 'isnumeric']
         df_labels = pd.merge(df_labels, isnumeric, on='Variable', how='left')
 
         # Ordering columns
         df_labels = df_labels[['Variable', 'isnumeric', 'variabel_label']]
+
 
         file_path = os.path.join(config.ROOT_FOLDER, config.RELEASES_FOLDER, config.PC_DATE)
         os.makedirs(file_path, exist_ok=True)
@@ -343,7 +631,7 @@ if __name__ == '__main__':
         summary_df = formatting_file(import_file_name=f'{config.SUM_OUTPUT_FILE}.csv', release_level='summary',
                                      pwear=config.SUM_PWEAR, pwear_morning=config.SUM_PWEAR_MORNING, pwear_quad=config.SUM_PWEAR_QUAD, print_message='files/IDs',
                                      output_filename=config.SUM_OUTPUT_FILE)
-        data_dictionary(df=summary_df, filename=config.SUM_OUTPUT_FILE, release_level='summary', pwear=config.SUM_PWEAR, pwear_quad=config.SUM_PWEAR_QUAD)
+        data_dictionary(df=summary_df, filename=config.SUM_OUTPUT_FILE, release_level='summary', pwear=config.SUM_PWEAR, pwear_quad=config.SUM_PWEAR_QUAD, append_level='summary')
 
     # Preparing daily release file
     if Wave_PostProcessingOrchestra.RUN_PREPARE_DAILY_RELEASE.lower() == 'yes':
@@ -351,7 +639,7 @@ if __name__ == '__main__':
         daily_df = formatting_file(import_file_name=f'{config.DAY_OUTPUT_FILE}.csv', release_level='daily',
                                    pwear=config.DAY_PWEAR, pwear_morning=config.DAY_PWEAR_MORNING, pwear_quad=config.DAY_PWEAR_QUAD, print_message='rows of data',
                                    output_filename=config.DAY_OUTPUT_FILE)
-        data_dictionary(df=daily_df, filename=config.DAY_OUTPUT_FILE, release_level='daily', pwear=config.DAY_PWEAR, pwear_quad=config.DAY_PWEAR_QUAD)
+        data_dictionary(df=daily_df, filename=config.DAY_OUTPUT_FILE, release_level='daily', pwear=config.DAY_PWEAR, pwear_quad=config.DAY_PWEAR_QUAD, append_level='daily')
 
     # Preparing hourly release file
     if Wave_PostProcessingOrchestra.RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes':
@@ -359,4 +647,6 @@ if __name__ == '__main__':
 
         hourly_df = formatting_file(import_file_name=f'{config.HOUR_OUTPUT_FILE}.csv', release_level='hourly',
                                     pwear=None, pwear_morning=None, pwear_quad=None, print_message='rows of data', output_filename=config.HOUR_OUTPUT_FILE)
-        data_dictionary(df=hourly_df, filename=config.HOUR_OUTPUT_FILE, release_level='hourly', pwear=None, pwear_quad=None)
+        data_dictionary(df=hourly_df, filename=config.HOUR_OUTPUT_FILE, release_level='hourly', pwear=None, pwear_quad=None, append_level='hourly')
+
+
