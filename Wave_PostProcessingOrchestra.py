@@ -69,20 +69,10 @@ if __name__ == '__main__':
 
     # Running the Collapse_Results script (to Summary and/or Daily:
     if RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'yes' or RUN_COLLAPSE_RESULTS_TO_DAILY.lower() == 'yes':
-        if RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'yes':
-            print_message("COLLAPSING DATA TO INDIVIDUAL SUMMARY FILES")
-        if RUN_COLLAPSE_RESULTS_TO_DAILY.lower() == 'yes':
-            print_message("COLLAPSING DATA TO INDIVIDUAL DAILY FILES")
         run_script("Collapse_Results.py")
 
     # Running the Append_Files script (Appending summary and/or daily and/or hourly):
     if RUN_APPEND_SUMMARY_FILES.lower() == 'yes' or RUN_APPEND_DAILY_FILES.lower() == 'yes' or RUN_APPEND_HOURLY_FILES.lower() == 'yes':
-        if RUN_APPEND_SUMMARY_FILES.lower() == 'yes':
-            print_message("APPENDING ALL INDIVIDUAL SUMMARY FILES TOGETHER")
-        if RUN_APPEND_DAILY_FILES.lower() == 'yes':
-            print_message("APPENDING ALL INDIVIDUAL DAILY FILES TOGETHER")
-        if RUN_APPEND_HOURLY_FILES.lower() == 'yes':
-            print_message("APPENDING ALL INDIVIDUAL HOURLY FILES TOGETHER")
         run_script("Appending_Files.py")
 
     # Running the Verification_Checks script:
@@ -90,21 +80,9 @@ if __name__ == '__main__':
         print_message("COMPLETING VERIFICATION CHECKS ON SUMMARY AND HOURLY DATA")
         run_script("Verification_Checks.py")
 
-    # Preparing summary releases
-    if RUN_PREPARE_SUMMARY_RELEASE.lower() == 'yes':
-        print_message("PREPARING A SUMMARY RELEASE FILE")
-        run_script("Prepare_Summary_Releases.py")
-
-    # Preparing daily releases
-    if RUN_PREPARE_DAILY_RELEASE.lower() == 'yes':
-        print_message("PREPARING A DAILY RELEASE FILE")
-        run_script("Prepare_Daily_Releases.py")
-
-    # Preparing hourly releases
-    if RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes':
-        print_message("PREPARING A HOURLY RELEASE FILE")
-        run_script("Prepare_Hourly_Releases.py")
-
+    # Preparing releases
+    if RUN_PREPARE_SUMMARY_RELEASE.lower() == 'yes' or RUN_PREPARE_DAILY_RELEASE.lower() == 'yes' or RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes':
+        run_script("Prepare_releases.py")
 
     print_message(Fore.BLUE + "The Wave Post Processing code has finished running successfully. \n If ran in PyCharm you can now close PyCharm. \n If ran as batch file: Press Enter to close the script." + Fore.RESET)
 
