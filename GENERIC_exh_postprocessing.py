@@ -15,13 +15,14 @@ from datetime import datetime, timedelta
 from colorama import Fore
 
 # READING IN FILELIST
-def reading_filelist():
+def reading_filelist(id=''):
     os.chdir(os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.FILELIST_FOLDER))
-    filelist_df = pd.read_csv('filelist.txt', delimiter='\t')  # Reading in the filelist
+    filelist_df = pd.read_csv('filelist' + id + '.txt', delimiter='\t')  # Reading in the filelist
     filelist_df = filelist_df.drop_duplicates(subset=['filename_temp'])
     files_list = filelist_df['filename_temp'].tolist()
 
     return files_list
+
 
 # READING METADATA
 def reading_metadata(files_list):
@@ -351,7 +352,9 @@ def outputting_dataframe(dataframes, files_list):
 
 
 if __name__ == '__main__':
-    files_list = reading_filelist()
+    task_id = os.environ.get('SLURM_ARRAY_TASK_ID')
+    files_list = reading_filelist(str(int(task_id)-1))
+    print(f"Task ID: {task_id}; files list: {files_list}")
     metadata_dfs = reading_metadata(files_list)
     datafiles_dfs = reading_datafile(files_list)
     if config.PROCESSING.lower() == 'pampro':

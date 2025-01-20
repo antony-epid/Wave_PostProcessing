@@ -10,7 +10,7 @@ import os
 import pandas as pd
 import Wave_PostProcessingOrchestra
 import numpy as np
-
+import Wave_PostProcessingHpcSubmit
 
 ############################################################################################################
 # PART A: This do file will append together all individual Summary files as well as join the files which have not produced an individual summary file
@@ -32,6 +32,8 @@ def create_filelist(folder):
         os.system('dir /b *.csv > filelist.txt')
     elif config.PC_TYPE.lower() == "mac":
         os.system('ls /b *csv > filelist.txt')
+    elif config.PC_TYPE.lower() == "linux":
+        os.system('ls *csv > filelist.txt')
 
     return file_path
 
@@ -181,8 +183,8 @@ def appending_no_analysis_files(no_analysis_files, appended_df, file_name):
 
 if __name__ == '__main__':
     # Appending summary files
-    if Wave_PostProcessingOrchestra.RUN_APPEND_SUMMARY_FILES.lower() == 'yes':
-        Wave_PostProcessingOrchestra.print_message("APPENDING ALL INDIVIDUAL SUMMARY FILES TOGETHER")
+    if Wave_PostProcessingHpcSubmit.RUN_APPEND_SUMMARY_FILES.lower() == 'yes':
+        Wave_PostProcessingHpcSubmit.print_message("APPENDING ALL INDIVIDUAL SUMMARY FILES TOGETHER")
         summary_file_path = create_filelist(folder=config.INDIVIDUAL_SUM_F)
         summary_files_list = remove_files(output_file=config.SUM_OUTPUT_FILE)
         summary_appended_df = appending_files(summary_files_list, file_path=summary_file_path, append_level='summary')
@@ -190,8 +192,8 @@ if __name__ == '__main__':
         appending_no_analysis_files(no_analysis_files, summary_appended_df, file_name=config.SUM_OUTPUT_FILE)
 
     # Appending hourly trimmed files
-    if Wave_PostProcessingOrchestra.RUN_APPEND_HOURLY_FILES.lower() == 'yes':
-        Wave_PostProcessingOrchestra.print_message("APPENDING ALL INDIVIDUAL HOURLY FILES TOGETHER")
+    if Wave_PostProcessingHpcSubmit.RUN_APPEND_HOURLY_FILES.lower() == 'yes':
+        Wave_PostProcessingHpcSubmit.print_message("APPENDING ALL INDIVIDUAL HOURLY FILES TOGETHER")
         hourly_file_path = create_filelist(folder=config.INDIVIDUAL_TRIMMED_F)
         hourly_files_list = remove_files(output_file=config.HOUR_OUTPUT_FILE)
         hourly_appended_df = appending_files(hourly_files_list, file_path=hourly_file_path, append_level='hourly')
@@ -199,8 +201,8 @@ if __name__ == '__main__':
         appending_no_analysis_files(no_analysis_files, hourly_appended_df, file_name=config.HOUR_OUTPUT_FILE)
 
     # Appending daily files
-    if Wave_PostProcessingOrchestra.RUN_APPEND_DAILY_FILES.lower() == 'yes':
-        Wave_PostProcessingOrchestra.print_message("APPENDING ALL INDIVIDUAL DAILY FILES TOGETHER")
+    if Wave_PostProcessingHpcSubmit.RUN_APPEND_DAILY_FILES.lower() == 'yes':
+        Wave_PostProcessingHpcSubmit.print_message("APPENDING ALL INDIVIDUAL DAILY FILES TOGETHER")
         daily_file_path = create_filelist(folder=config.INDIVIDUAL_DAILY_F)
         daily_files_list = remove_files(output_file=config.DAY_OUTPUT_FILE)
         daily_appended_df = appending_files(daily_files_list, file_path=daily_file_path, append_level='daily')

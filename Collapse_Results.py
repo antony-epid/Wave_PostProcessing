@@ -13,7 +13,7 @@ from datetime import timedelta
 import numpy as np
 import statsmodels.api as sm
 import Wave_PostProcessingOrchestra
-
+import Wave_PostProcessingHpcSubmit
 
 ##################
 # Processing #
@@ -32,13 +32,13 @@ def create_folders(folder_path):
         pass
 
 # READING IN FILELIST
-def reading_filelist():
+def reading_filelist(id=''):
     os.chdir(os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.FILELIST_FOLDER))
-    filelist_df = pd.read_csv('filelist.txt', delimiter='\t')  # Reading in the filelist
+    #filelist_df = pd.read_csv('filelist.txt', delimiter='\t')  # Reading in the filelist
+    filelist_df = pd.read_csv('filelist' + id + '.txt', delimiter='\t')  # Reading in the filelist
     filelist_df = filelist_df.drop_duplicates(subset=['filename_temp'])
     file_list = filelist_df['filename_temp'].tolist()
     return file_list
-
 
 # LOOPING THROUGH EACH FILE FOR COLLAPSING
 def reading_part_proc(date_orig):
@@ -907,9 +907,13 @@ if __name__ == '__main__':
     create_folders(summary_files_path)
 
     # Creating filelist to loop through each file individually:
-    file_list = reading_filelist()
-    if Wave_PostProcessingOrchestra.RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'yes':
-        Wave_PostProcessingOrchestra.print_message("COLLAPSING DATA TO INDIVIDUAL SUMMARY FILES")
+    #file_list = reading_filelist()
+    task_id = os.environ.get('SLURM_ARRAY_TASK_ID')
+    file_list = reading_filelist(str(int(task_id)-1))
+    print(f"Task ID: {task_id}; file list: {file_list}")
+
+    if Wave_PostProcessingHpcSubmit.RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'yes':
+        Wave_PostProcessingHpcSubmit.print_message("COLLAPSING DATA TO INDIVIDUAL SUMMARY FILES")
         for file_id in file_list:
             time_resolution, df = reading_part_proc(date_orig='DATETIME_ORIG')
 
@@ -941,8 +945,8 @@ if __name__ == '__main__':
         data_dic(summary_headers_df, collapse_level='summary', file_path=summary_files_path, dictionary_name="Data_dictionary_summary_means.csv")
 
     # Collapsing results to daily level if specified in orchestra file
-    if Wave_PostProcessingOrchestra.RUN_COLLAPSE_RESULTS_TO_DAILY.lower() == 'yes':
-        Wave_PostProcessingOrchestra.print_message("COLLAPSING DATA TO INDIVIDUAL DAILY FILES")
+    if Wave_PostProcessingHpcSubmit.RUN_COLLAPSE_RESULTS_TO_DAILY.lower() == 'yes':
+        Wave_PostProcessingHpcSubmit.print_message("COLLAPSING DATA TO INDIVIDUAL DAILY FILES")
 
         # Creating folder paths to save collapsed results daily level in
         daily_files_path = create_path(config.INDIVIDUAL_DAILY_F)
@@ -959,7 +963,7 @@ if __name__ == '__main__':
             # Truncating data (depending on what is specified in config file) and creating dataframe if no valid data:
             daily_df = remove_data(daily_df)
             row_count, flag_valid_total = creating_dummy(daily_df, file_id, time_resolution)
-            daily_df = trimmed_dataset(daily_df, file_id, time_resolution, output_trimmed_df='Yes' if Wave_PostProcessingOrchestra.RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'no' else 'No')
+            daily_df = trimmed_dataset(daily_df, file_id, time_resolution, output_trimmed_df='Yes' if Wave_PostProcessingHpcSubmit.RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'no' else 'No')
 
             # Creating empty dataframe with headers, to fill in with data later
             daily_headers_df = creating_headers(file_id, collapse_level='daily', file_path=daily_files_path, file_name=config.DAY_OVERALL_MEAN)
