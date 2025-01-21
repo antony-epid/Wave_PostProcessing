@@ -36,12 +36,12 @@ Store the accelerometer files in the ```_data``` folder, while the output from W
 3. Extract the ZIP file into the ```_analysis``` folder, ensuring it extracts to a single level of subfolders.
 
 ### Install dependencies
-Certain Python modules are required to run the code. A **requirements.txt**  it included within the downloaded ZIP file, which contains all necessary dependencies for the project. See the User Guides on [GitHub wiki](https://github.com/CAS254/Acc_Post_Processing/wiki) for detailed instructions on installing these dependencies.
+Certain Python modules are required to run the code. A **requirements.txt**  it included within the downloaded ZIP file, which contains all necessary dependencies for the project. See the User Guides on [GitHub wiki](https://github.com/MRC-Epid/Acc_Post_Processing/wiki) for detailed instructions on installing these dependencies.
 
 # Preparing script to run
-For a description of the different parts of the Acc Post Processing script see [Explanation of code](https://github.com/CAS254/Acc_Post_Processing/wiki/2.-Explanation-of-code). 
+For a description of the different parts of the Acc Post Processing script see [Explanation of code](https://github.com/MRC-Epid/Acc_Post_Processing/wiki/2.-Explanation-of-code). 
 
-Before executing the script, some variables must be edited to study specific settings. The two files that require editing are **config.py** and the **Acc_Post_Processing_Orchestra.py**. For in-depth instructions on how to edit and run the script, see the [GitHub Wiki](https://github.com/CAS254/Acc_Post_Processing/wiki).
+Before executing the script, some variables must be edited to study specific settings. The two files that require editing are **config.py** and the **Acc_Post_Processing_Orchestra.py**. For in-depth instructions on how to edit and run the script, see the [GitHub Wiki](https://github.com/MRC-Epid/Acc_Post_Processing/wiki).
 
 # Output 
 The process generates release files of the post-processed accelerometry data. It can produce release files minute, hourly, daily and summary level. Each file will include data for all files/participants appended together. These files will be saved in the ```_releases``` folder. Each file will have an accompanying data dictionary. All files will be in CSV format. 
