@@ -31,7 +31,7 @@ If the code is run on Pampro output you will futhermore have to create the follo
 Store the accelerometer files in the ```_data``` folder, while the output from Wave or Pampro processing should be placed in the ```_results``` folder (Which should be set up when running Wave or Pampro). 
 
 ### Download the code
-1. Navigate to the Acc Post Processing repository [here](https://github.com/CAS254/Acc_Post_Processing). 
+1. Navigate to the Acc Post Processing repository [here](https://github.com/MRC-Epid/Acc_Post_Processing). 
 2. Click  ![image](https://github.com/user-attachments/assets/587012f2-735e-471e-b7c0-38e7977e36ee) and select **Download ZIP**.
 3. Extract the ZIP file into the ```_analysis``` folder, ensuring it extracts to a single level of subfolders.
 
