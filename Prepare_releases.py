@@ -624,7 +624,6 @@ def data_dictionary(df, filename, release_level, pwear, pwear_quad, append_level
         # Ordering columns
         df_labels = df_labels[['Variable', 'isnumeric', 'variabel_label']]
 
-
         file_path = os.path.join(config.ROOT_FOLDER, config.RELEASES_FOLDER, config.PC_DATE)
         os.makedirs(file_path, exist_ok=True)
         file_name = os.path.join(file_path, f'Data_Dict_{filename}.csv')
