@@ -1,7 +1,7 @@
 # Introduction
 Acc Post Processing is a Python project designed to post-process accelerometry data that has been processed through Wave or Pampro. The Acc Post Processing project can be executed either through PyCharm or via a batch file. It is recommended to set up a virtual environment in a Python interpreter (PyCharm is used within the MRC Epidemiology Unit) and run the project through this. Follow the user guides for instructions on how to setup, prepare and run the project using both approaches.
 
-For detailed user guides on setting up and running the script, refer to the repository [wiki]([https://github.com/MRC-Epid/Acc_Post_Processing/wiki]). 
+For detailed user guides on setting up and running the script, refer to the repository [wiki](https://github.com/MRC-Epid/Acc_Post_Processing/wiki). 
 
 # Prerequisites
 - Output from accelerometer files processed through Wave or Pampro.
