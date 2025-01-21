@@ -41,10 +41,10 @@ Certain Python modules are required to run the code. A **requirements.txt**  it 
 # Preparing script to run
 For a description of the different parts of the Acc Post Processing script see [Explanation of code](https://github.com/CAS254/Acc_Post_Processing/wiki/2.-Explanation-of-code). 
 
-Before executing the script, some variables must be edited to study specific settings. The two files that require editing are **config.py** and the **Wave_PostProcessingOrchestra.py**. For in-depth instructions on how to edit and run the script, see the [GitHub Wiki](https://github.com/CAS254/Acc_Post_Processing/wiki).
+Before executing the script, some variables must be edited to study specific settings. The two files that require editing are **config.py** and the **Acc_Post_Processing_Orchestra.py**. For in-depth instructions on how to edit and run the script, see the [GitHub Wiki](https://github.com/CAS254/Acc_Post_Processing/wiki).
 
 # Output 
 The process generates release files of the post-processed accelerometry data. It can produce release files minute, hourly, daily and summary level. Each file will include data for all files/participants appended together. These files will be saved in the ```_releases``` folder. Each file will have an accompanying data dictionary. All files will be in CSV format. 
 
-If the ```RUN_VERIFICATION_CHECKS``` is activated to run in the ```Wave_PostProcessing_Orchestra.py``` file, a verification log will be produced. The log will be saved in the ```_logs``` folder. It provides summaries of the post processed data and notes any issues encountered during the processing of accelerometer files. Review the log to identify any files that may need removal before finalising the release files.
+If the ```RUN_VERIFICATION_CHECKS``` is activated to run in the ```Acc_Post_Processing_Orchestra.py``` file, a verification log will be produced. The log will be saved in the ```_logs``` folder. It provides summaries of the post processed data and notes any issues encountered during the processing of accelerometer files. Review the log to identify any files that may need removal before finalising the release files.
 
