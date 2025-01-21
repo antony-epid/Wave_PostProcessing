@@ -15,7 +15,7 @@ from colorama import Fore
 from datetime import date
 from Housekeeping import filenames_to_remove
 import numpy as np
-import Wave_PostProcessingOrchestra
+import Acc_Post_Processing_Orchestra
 
 #########################################################
 # --- IMPORTING AND FORMATTING SUMMARY RESULTS FILE --- #
@@ -635,8 +635,8 @@ def data_dictionary(df, filename, release_level, pwear, pwear_quad, append_level
 #################################
 if __name__ == '__main__':
     # Preparing summary release file
-    if Wave_PostProcessingOrchestra.RUN_PREPARE_SUMMARY_RELEASE.lower() == 'yes':
-        Wave_PostProcessingOrchestra.print_message("PREPARING A SUMMARY RELEASE FILE")
+    if Acc_Post_Processing_Orchestra.RUN_PREPARE_SUMMARY_RELEASE.lower() == 'yes':
+        Acc_Post_Processing_Orchestra.print_message("PREPARING A SUMMARY RELEASE FILE")
 
         summary_df = formatting_file(import_file_name=f'{config.SUM_OUTPUT_FILE}.csv', release_level='summary',
                                      pwear=config.SUM_PWEAR, pwear_morning=config.SUM_PWEAR_MORNING, pwear_quad=config.SUM_PWEAR_QUAD, print_message='files/IDs',
@@ -644,16 +644,16 @@ if __name__ == '__main__':
         data_dictionary(df=summary_df, filename=config.SUM_OUTPUT_FILE, release_level='summary', pwear=config.SUM_PWEAR, pwear_quad=config.SUM_PWEAR_QUAD, append_level='summary')
 
     # Preparing daily release file
-    if Wave_PostProcessingOrchestra.RUN_PREPARE_DAILY_RELEASE.lower() == 'yes':
-        Wave_PostProcessingOrchestra.print_message("PREPARING A DAILY RELEASE FILE")
+    if Acc_Post_Processing_Orchestra.RUN_PREPARE_DAILY_RELEASE.lower() == 'yes':
+        Acc_Post_Processing_Orchestra.print_message("PREPARING A DAILY RELEASE FILE")
         daily_df = formatting_file(import_file_name=f'{config.DAY_OUTPUT_FILE}.csv', release_level='daily',
                                    pwear=config.DAY_PWEAR, pwear_morning=config.DAY_PWEAR_MORNING, pwear_quad=config.DAY_PWEAR_QUAD, print_message='rows of data',
                                    output_filename=config.DAY_OUTPUT_FILE)
         data_dictionary(df=daily_df, filename=config.DAY_OUTPUT_FILE, release_level='daily', pwear=config.DAY_PWEAR, pwear_quad=config.DAY_PWEAR_QUAD, append_level='daily')
 
     # Preparing hourly release file
-    if Wave_PostProcessingOrchestra.RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes':
-        Wave_PostProcessingOrchestra.print_message("PREPARING A HOURLY RELEASE FILE")
+    if Acc_Post_Processing_Orchestra.RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes':
+        Acc_Post_Processing_Orchestra.print_message("PREPARING A HOURLY RELEASE FILE")
 
         hourly_df = formatting_file(import_file_name=f'{config.HOUR_OUTPUT_FILE}.csv', release_level='hourly',
                                     pwear=None, pwear_morning=None, pwear_quad=None, print_message='rows of data', output_filename=config.HOUR_OUTPUT_FILE)
