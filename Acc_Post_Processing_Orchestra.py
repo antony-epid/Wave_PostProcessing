@@ -84,6 +84,6 @@ if __name__ == '__main__':
     if RUN_PREPARE_SUMMARY_RELEASE.lower() == 'yes' or RUN_PREPARE_DAILY_RELEASE.lower() == 'yes' or RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes':
         run_script("Prepare_releases.py")
 
-    print_message(Fore.BLUE + "The Wave Post Processing code has finished running successfully. \n If ran in PyCharm you can now close PyCharm. \n If ran as batch file: Press Enter to close the script." + Fore.RESET)
+    print_message(Fore.BLUE + "The Acc Post Processing code has finished running successfully. \n If ran in PyCharm you can now close PyCharm. \n If ran as batch file: Press Enter to close the script." + Fore.RESET)
 
 
