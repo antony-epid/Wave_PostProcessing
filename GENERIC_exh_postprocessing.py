@@ -203,8 +203,8 @@ def indicator_variable(time_resolutions, merged_dfs):
         if merged_df['valid'].any():
             merged_df = merged_df.loc[merged_df['valid']]
 
-        # Turning of notifications that we are using slices of dataframe.
-        pd.options.mode.chained_assignment = None
+        # Making copy of dataframe to improve memory
+        merged_df = merged_df.copy()
 
         # Generating an index for freeday number
         merged_df.sort_values(by=['file_id', 'DATETIME'], inplace=True)
@@ -228,7 +228,7 @@ def pwear_variables(valid_dfs, time_resolutions):
 
         # Drop any bout variables (if there are any) just in case these were to get listed to be included in the conversion
         bout_variables = [col for col in valid_df.columns if '_mt' in col]
-        valid_df.drop(columns=bout_variables, inplace = True)
+        valid_df.drop(columns=bout_variables, inplace=True)
 
         #Checking if enmo_0plus exists and then convert to fractions of time
         if 'ENMO_0plus' in valid_df.columns:
