@@ -364,7 +364,6 @@ def outputting_dataframe(dataframes, files_list):
 
         dataframe.to_csv(file_name, index=False)
 
-
 if __name__ == '__main__':
     files_list = reading_filelist()
     metadata_dfs = reading_metadata(files_list)
