@@ -25,7 +25,7 @@ Create the following folder structure in your project directory:
 - _releases
 - _results
   
-If the code is run on Pampro output you will futhermore have to create the following folder:
+If the code is run on Pampro output you will furthermore have to create the following folder:
 - _anomalies
 
 Store the accelerometer files in the ```_data``` folder, while the output from Wave or Pampro processing should be placed in the ```_results``` folder (Which should be set up when running Wave or Pampro). 
