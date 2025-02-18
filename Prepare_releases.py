@@ -281,8 +281,10 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
                 remaining_columns += ['include', 'imputed']
 
             if release_level == 'hourly':
-                remaining_columns += ['Battery_mean', 'day_valid', 'days_of_data_processed', 'FLAG_MECH_NOISE', 'freeday_number',
+                remaining_columns += ['Battery_mean', 'days_of_data_processed', 'FLAG_MECH_NOISE', 'freeday_number',
                                       'generic_first_timestamp', 'generic_last_timestamp', 'postend', 'prestart', 'Temperature_mean', 'valid']
+                if config.count_prefixes.lower() == '1h':
+                    remaining_columns.insert(1, 'day_valid')
             if config.USE_WEAR_LOG.lower() == 'yes':
                 remaining_columns += ['start', 'end', 'flag_no_wear_info', 'flag_missing_starthour', 'flag_missing_endhour']
 
@@ -326,8 +328,12 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
         unique_ids = sorted(set(id_list))
         id_counts = df['id'].value_counts().sort_index()
         print(Fore.YELLOW + "IDs and number of rows/hours per ID:" + Fore.RESET)
+        if config.count_prefixes.lower() == '1h':
+            PREFIX = 'hours'
+        if config.count_prefixes.lower() == '1m':
+            PREFIX = 'minutes'
         for id, count in zip(unique_ids, id_counts):
-            print(Fore.YELLOW + f'{id:}   {count} files/hours' + Fore.RESET)
+            print(Fore.YELLOW + f'{id:}   {count} files/{PREFIX}' + Fore.RESET)
 
     # Saving the release file with todays date
     today_date = date.today()
@@ -653,7 +659,10 @@ if __name__ == '__main__':
 
     # Preparing hourly release file
     if Acc_Post_Processing_Orchestra.RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes':
-        Acc_Post_Processing_Orchestra.print_message("PREPARING A HOURLY RELEASE FILE")
+        if config.count_prefixes.lower() == '1h':
+            Acc_Post_Processing_Orchestra.print_message("PREPARING A HOURLY RELEASE FILE")
+        if config.count_prefixes.lower() == '1m':
+            Acc_Post_Processing_Orchestra.print_message("PREPARING A MINUTE LEVEL RELEASE FILE")
 
         hourly_df = formatting_file(import_file_name=f'{config.HOUR_OUTPUT_FILE}.csv', release_level='hourly',
                                     pwear=None, pwear_morning=None, pwear_quad=None, print_message='rows of data', output_filename=config.HOUR_OUTPUT_FILE)
