@@ -124,15 +124,15 @@ def appending_no_analysis_files(no_analysis_files, appended_df, file_name):
 
             # Specifying what variables to keep
             variables_to_keep = [
-                '.*start_error*.', '.*end_error*.', 'calibration_method', 'noise_cutoff_mg',
-                'generic_first_timestamp', 'generic_last_timestamp', 'device', 'processing_epoch', 'frequency'
+                '.*start_error*.', '.*end_error*.', '^calibration_method$', '^noise_cutoff_mg$',
+                '^generic_first_timestamp$', '^generic_last_timestamp$', '^device$', '^processing_epoch$', '^frequency$'
             ]
             # Variables to keep if processed through Wave
             if config.PROCESSING.lower() == 'wave':
                 variables_to_keep.extend(['.*anom*.', '.*batt*.'])
             # Variables to keep if processed through Pampro
             if config.PROCESSING.lower() == 'pampro':
-                variables_to_keep.extend(['calibration_type', 'QC_axis_anomaly'])
+                variables_to_keep.extend(['^calibration_type$', '^QC_axis_anomaly$'])
 
             # Joining the variables to be able to use regular expression
             combined_variables = '|'.join(variables_to_keep)
@@ -173,12 +173,12 @@ def appending_no_analysis_files(no_analysis_files, appended_df, file_name):
             merged_df['valid'] = merged_df['valid'].astype('bool', errors='ignore')
 
 
-        # Outputting appended summary dataframe
-        output_file_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.SUMMARY_FOLDER)
-        os.makedirs(output_file_path, exist_ok=True)
-        file_name = os.path.join(output_file_path, f"{file_name}.csv")
+    # Outputting appended summary dataframe
+    output_file_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.SUMMARY_FOLDER)
+    os.makedirs(output_file_path, exist_ok=True)
+    file_name = os.path.join(output_file_path, f"{file_name}.csv")
 
-        merged_df.to_csv(file_name, index=False)
+    merged_df.to_csv(file_name, index=False)
 
 
 
@@ -192,9 +192,12 @@ if __name__ == '__main__':
         no_analysis_files = no_analysis_filelist()
         appending_no_analysis_files(no_analysis_files, summary_appended_df, file_name=config.SUM_OUTPUT_FILE)
 
-    # Appending hourly trimmed files
+    # Appending hourly/minute level trimmed files
     if Acc_Post_Processing_Orchestra.RUN_APPEND_HOURLY_FILES.lower() == 'yes':
-        Acc_Post_Processing_Orchestra.print_message("APPENDING ALL INDIVIDUAL HOURLY FILES TOGETHER")
+        if config.count_prefixes.lower() == '1h':
+            Acc_Post_Processing_Orchestra.print_message("APPENDING ALL INDIVIDUAL HOURLY FILES TOGETHER")
+        if config.count_prefixes.lower() == '1m':
+            Acc_Post_Processing_Orchestra.print_message("APPENDING ALL INDIVIDUAL MINUTE LEVEL FILES")
         hourly_file_path = create_filelist(folder=config.INDIVIDUAL_TRIMMED_F)
         hourly_files_list = remove_files(output_file=config.HOUR_OUTPUT_FILE)
         hourly_appended_df = appending_files(hourly_files_list, file_path=hourly_file_path, append_level='hourly')
