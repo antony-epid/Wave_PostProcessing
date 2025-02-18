@@ -423,7 +423,7 @@ def input_data(df, time_resolution, collapse_level):
         return dictionary
 
 
-# CREATING PWEAR VARIABLES AND IMPUTTING TO THE EMPTY DATAFRAME
+# CREATING PWEAR VARIABLES AND INPUTTING TO THE EMPTY DATAFRAME
 def input_pwear_segment(df, dictionary, collapse_level):
     if df is not None and not df.empty:
 
