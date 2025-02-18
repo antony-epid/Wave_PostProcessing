@@ -33,7 +33,8 @@ def add_header(log_header):
     :param log_header: Header in verification log.
     :return:
     """
-    verif_log.add_page_break()
+    if len(verif_log.paragraphs) > 2:
+        verif_log.add_page_break()
     verif_log.add_heading(f'{log_header} - {config.PC_DATE}')
     save_verif_log(verif_log)
 
@@ -712,7 +713,10 @@ def compare_enmo(df, log, create_var, var_diff, text_to_log, text_no_error):
     :return:
     """
     if config.REMOVE_THRESHOLDS.lower() == 'no':
-        df[create_var] = df['ENMO_0plus'] * 720
+        if config.count_prefixes.lower() == '1h':
+            df[create_var] = df['ENMO_0plus'] * 720
+        if config.count_prefixes.lower() == '1m':
+            df[create_var] = df['ENMO_0plus'] * 12
 
         # Generating difference between ENMO_n and ENMO_0plus_check
         df[var_diff] = df.apply(lambda x: abs(x['ENMO_n'] - x[create_var]) if x['ENMO_n'] != x[create_var] else 0, axis=1)
@@ -938,11 +942,12 @@ if __name__ == '__main__':
 
     # --- SECTION 1: VERIFICATION OF OUTPUT SUMMARY OVERALL MEANS --- #
     # Creating verification log and importing summary dataframe
-    verif_log = create_verif_log("VERIFICATION OF OUTPUT SUMMARY OVERALL MEANS")
+    verif_log = create_verif_log("VERIFICATION LOG")
     summary_df, summary_file_exists = dataframe(file_name=config.SUM_OUTPUT_FILE, variable='id')
 
     # If dataframe exists, print out files processed, devices used and summary of start dates
     if summary_file_exists:
+        add_header(log_header=f"VERIFICATION OF OUTPUT SUMMARY OVERALL MEANS")
         information_to_verif_log(log=verif_log, df=summary_df, table='No', variable_to_count='id', text_to_log="Number of files processed", count_mode='total')
         information_to_verif_log(log=verif_log, df=summary_df, table='Yes', variable_to_count='device', text_to_log="Number of devices used", count_mode='unique')
         df = sum_startdate(log=verif_log, df=summary_df, text_to_log="Summary of start dates:", description="Check that the minimum and maximum start date falls within the expected testing dates.", x=0, y=0, z=0)
@@ -1180,7 +1185,11 @@ if __name__ == '__main__':
     # --- SECTION 2: VERIFICATION OF HOURLY FILE(S) --- #
     # Importing hourly dataframe
     hourly_df, hourly_file_exists = dataframe(file_name=config.HOUR_OUTPUT_FILE, variable='file_id')
-    add_header(log_header="VERIFICATION OF HOURLY FILES")
+    if config.count_prefixes.lower() == '1h':
+        PREFIX = 'HOURLY'
+    if config.count_prefixes.lower() == '1m':
+        PREFIX = 'MINUTE LEVEL'
+    add_header(log_header=f"VERIFICATION OF {PREFIX} FILES")
 
     # If dataframe exists, tag duplicates and print to log if there are any
     if hourly_file_exists:
@@ -1195,14 +1204,15 @@ if __name__ == '__main__':
             tagging_duplicates_arg.append('PITCH_mean')
         if 'roll_mean' in hourly_df.columns:
             tagging_duplicates_arg.append('ROLL_mean')
-        df = tagging_duplicates(df=hourly_df, dups='dup_enmo_date', variables=tagging_duplicates_arg)
+        df_filtered = hourly_df[hourly_df['timestamp'].notna()].copy()
+        df = tagging_duplicates(df=df_filtered, dups='dup_enmo_date', variables=tagging_duplicates_arg)
 
         # Printing out duplicates
         verif_checks(
             comparison_operator="!=",
             variable="dup_enmo_date",
             cut_off=0,
-            df=hourly_df,
+            df=df_filtered,
             log=verif_log,
             text_to_log="There are duplicates in this hourly dataset. \n Add the duplicate file to the Housekeeping file to remove data from final dataset.",
             column_number=5,
