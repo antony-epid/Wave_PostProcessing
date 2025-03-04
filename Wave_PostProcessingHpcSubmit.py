@@ -26,13 +26,13 @@ RUN_FILELIST_GENERATION = 'No'              # Create a filelist of all Wave outp
 RUN_GENERIC_EXH_POSTPROCESSING = 'No'       # Generic exhaustive post processing works through generic updates to the Wave output. This needs to be completed before collapsing any data.
 RUN_COLLAPSE_RESULTS_TO_SUMMARY = 'No'      # Takes the file created from exhaustive post processing and collapses it down to a summary (1 line) file. These are saved as individual files.
 RUN_COLLAPSE_RESULTS_TO_DAILY = 'No'        # Takes the file created from exhaustive post processing and collapses it down to a daily (1 line per day) file. These are saved as individual files.
-RUN_APPEND_SUMMARY_FILES = 'Yes'             # Appends together the individual summary level data files (created within the collapse results to summary file)
-RUN_APPEND_DAILY_FILES = 'Yes'               # Appends together the daily level data files (created within the collapse results to summary file)
-RUN_APPEND_HOURLY_FILES = 'Yes'              # Appends together the hourly level data files (created within the collapse results to summary file)
+RUN_APPEND_SUMMARY_FILES = 'No'             # Appends together the individual summary level data files (created within the collapse results to summary file)
+RUN_APPEND_DAILY_FILES = 'No'               # Appends together the daily level data files (created within the collapse results to summary file)
+RUN_APPEND_HOURLY_FILES = 'No'              # Appends together the hourly level data files (created within the collapse results to summary file)
 RUN_VERIFICATION_CHECKS = 'No'              # Verification code will run some basic checks on the summary and hourly level data looking for potential issues (i.e. duplicate/ extreme outliers). Does not need to be ran to prepare release files, but useful to fully check data. Will be outputted in the _logs folder.
-RUN_PREPARE_SUMMARY_RELEASE = 'No'          # Prepares summary releases. Will be outputted in the _releases folder together with a data dictionary.
-RUN_PREPARE_DAILY_RELEASE = 'No'            # Prepares daily releases. Will be outputted in the _releases folder together with a data dictionary.
-RUN_PREPARE_HOURLY_RELEASE = 'No'           # Prepares hourly releases. Will be outputted in the _releases folder together with a data dictionary.
+RUN_PREPARE_SUMMARY_RELEASE = 'Yes'          # Prepares summary releases. Will be outputted in the _releases folder together with a data dictionary.
+RUN_PREPARE_DAILY_RELEASE = 'Yes'            # Prepares daily releases. Will be outputted in the _releases folder together with a data dictionary.
+RUN_PREPARE_HOURLY_RELEASE = 'Yes'           # Prepares hourly releases. Will be outputted in the _releases folder together with a data dictionary.
 
 # Python executable used in the virtual environment
 venv_python = sys.executable
@@ -124,23 +124,14 @@ if __name__ == '__main__':
     # Running the Verification_Checks script:
     if RUN_VERIFICATION_CHECKS.lower() == 'yes':
         print_message("COMPLETING VERIFICATION CHECKS ON SUMMARY AND HOURLY DATA")
-        run_script("Verification_Checks.py")
+        #run_script("Verification_Checks.py")
+        jid = submit_jobs('Verification_Checks.py', arrsize=1,num_cpu=1, jid=None, budgacc='BRAGE-SL3-CPU')
 
-    # Preparing summary releases
-    if RUN_PREPARE_SUMMARY_RELEASE.lower() == 'yes':
+    # Preparing releases
+    if RUN_PREPARE_SUMMARY_RELEASE.lower() == 'yes' or RUN_PREPARE_DAILY_RELEASE.lower() == 'yes' or RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes':
         print_message("PREPARING A SUMMARY RELEASE FILE")
-        run_script("Prepare_Summary_Releases.py")
-
-    # Preparing daily releases
-    if RUN_PREPARE_DAILY_RELEASE.lower() == 'yes':
-        print_message("PREPARING A DAILY RELEASE FILE")
-        run_script("Prepare_Daily_Releases.py")
-
-    # Preparing hourly releases
-    if RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes':
-        print_message("PREPARING A HOURLY RELEASE FILE")
-        run_script("Prepare_Hourly_Releases.py")
-
+        #run_script("Prepare_releases.py")
+        jid = submit_jobs('Prepare_releases.py', arrsize=1,num_cpu=1, jid=None, budgacc='BRAGE-SL3-CPU')
 
     print_message(Fore.BLUE + "The Wave Post Processing code has finished running successfully. \n If ran in PyCharm you can now close PyCharm. \n If ran as batch file: Press Enter to close the script." + Fore.RESET)
 

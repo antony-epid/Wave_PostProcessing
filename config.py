@@ -46,7 +46,7 @@ WEAR_LOG_FOLDER = '_analysis/trim_times'                                        
 
 RUN_HOUSEKEEPING = 'Yes'        # EDIT: Set to 'Yes' if you have housekeeping script to drop any duplicates etc. Set to 'No' if you don't have a housekeeping script to run.
 RUN_CORRUPTIONS_HOUSEKEEPING = 'Yes'  # EDIT: Set to 'yes' if you have a corruptions housekeeping file to adjust pwear based on verification checks
-CORRUPTION_CONDITION_FILE_PATH = 'C:/Users/cas254/PycharmProjects/PostProcessing/corruptions_conditions.csv'  # EDIT: Edit to the file path for the corruptions_conditions filepath, this should include the name and file extension of the file itself. (e.g., corruptions_conditions.csv)
+CORRUPTION_CONDITION_FILE_PATH = '/rfs/project/rfs-Bl26eNcUDB8/users_writeable/antony_runs/TestWave/corruptions_conditions.csv'  # EDIT: Edit to the file path for the corruptions_conditions filepath, this should include the name and file extension of the file itself. (e.g., corruptions_conditions.csv)
 
 ###########################################################################
 # --- VARIABLES BELOW ARE SPECIFIC TO EACH PART OF THE POSTPROCESSING --- #
@@ -115,7 +115,7 @@ VERIFY_VARS = ['enmo']                              # DO NOT EDIT: Variables use
 
 MIN_INCLUSION_HRS = 96                              # EDIT: Minimum number of hours recorded --> If below this it will be flagged as device stopped recording early
 PROTOCOL_FREQUENCY = 100                            # EDIT: Frequency the devices are set up to record data at for the study/ project. Keep as 100 if device is recording at 100 hz.
-
+CAL_ERROR = 13
 
 # --- PREPARING SUMMARY/HOURLY/DAILY RELEASES -- #
 # EDIT: In the variables below you can specify how many hours of wear a file need to be on summary and daily basis to count as valid.
