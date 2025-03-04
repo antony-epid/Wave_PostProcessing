@@ -123,7 +123,7 @@ def dataframe(file_name, variable):
     """
     dataframe_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.SUMMARY_FOLDER, f'{file_name}.csv')
     if os.path.exists(dataframe_path):
-        df = pd.read_csv(dataframe_path)
+        df = pd.read_csv(dataframe_path, dtype={'subject_code': str})
 
         file_exists = True
         if config.RUN_HOUSEKEEPING.lower() == 'yes':
@@ -1254,6 +1254,11 @@ if __name__ == '__main__':
         portrait(verif_log)
 
         # Checking files/timepoints that are flagged as mechanical noise
+        if config.count_prefixes.lower() == '1h':
+            variables_table = ['id', 'dayofweek', 'hourofday', 'ENMO_mean', 'Pwear']
+        if config.count_prefixes.lower() == '1m':
+            variables_table = ['id', 'dayofweek', 'hourofday', 'minuteofhour', 'ENMO_mean', 'Pwear']
+
         enmo_flag(
             df=hourly_df,
             log=verif_log,
@@ -1263,7 +1268,7 @@ if __name__ == '__main__':
             - enmo_mean > 3000 and Pwear not 0. This would suggest an epoch either from monitor issue/other sources (i.e. washing machines)
             - enmo_mean > 1500 and pwear > 0.9. This would suggest that device was worn but that there is noise.
             - enmo_mean > 600 and pwear < 0.1. This would be an epochs that have a very small amount of Pwear but is getting a large amount of enmo for that blip of data \nIt is suggested to remove these hours from the hourly release file. The hours will be flagged in the release file (FLAG_MECH_NOISE=1).""",
-            table_variables = ['id', 'dayofweek', 'hourofday', 'ENMO_mean', 'Pwear'],
+            table_variables = variables_table,
             text_no_error='There are no timepoints flagged as mechanical noise. No files to check.')
 
 
