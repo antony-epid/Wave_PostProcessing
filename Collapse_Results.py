@@ -103,7 +103,7 @@ def creating_dummy(df, file_id, time_resolution):
         if config.PROCESSING.lower() == 'wave':
             columns_to_keep += config.ANOM_VAR_WAVE + ['start_error', 'end_error', 'QC_anomalies_total', 'processing_script']
         if config.PROCESSING.lower() == 'pampro':
-            columns_to_keep += config.ANOM_VAR_PAMPRO + ['calibration_type', 'file_start_error', 'file_end_error', 'mf_start_error', 'mf_end_error']
+            columns_to_keep += config.ANOM_VAR_PAMPRO + ['subject_code', 'calibration_type', 'file_start_error', 'file_end_error', 'mf_start_error', 'mf_end_error']
         if config.USE_WEAR_LOG.lower() == 'yes':
             columns_to_keep.extend(['start', 'end'])
         new_dummy_df = new_dummy_df[columns_to_keep]
@@ -187,7 +187,7 @@ def creating_headers(file_id, collapse_level, file_path, file_name):
         generic_variables.extend(['processing_epoch'])
 
     if config.PROCESSING.lower() == 'pampro':
-        generic_variables.extend(['QC_axis_anomaly'])
+        generic_variables.extend(['subject_code', 'QC_axis_anomaly'])
 
     # Adding generic variables when collapsing to summary level
     if collapse_level == 'summary':
@@ -307,6 +307,7 @@ def input_data(df, time_resolution, collapse_level):
         first_row_data = df.loc[first_row]
         id_value = first_row_data['id']
         file_id_value = first_row_data['file_id']
+        subject_code = first_row_data['subject_code']
         startdate_value = first_row_data['DATE']
         device_value = first_row_data['device']
         noise_cutoff_value = first_row_data['noise_cutoff_mg']
@@ -359,6 +360,7 @@ def input_data(df, time_resolution, collapse_level):
         # Adding the summary variables to the empty dataframe
         dictionary = {
             'id': file_id_value,
+            'subject_code': subject_code,
             'startdate': startdate_value,
             'device': device_value,
             'noise_cutoff': noise_cutoff_value,
@@ -908,6 +910,23 @@ if __name__ == '__main__':
 
     # Creating filelist to loop through each file individually:
     file_list = reading_filelist()
+
+    # Creating and outputting trimmed hourly/minute level file if specifies in orchestra file and the other collapse files are not needed
+    if Acc_Post_Processing_Orchestra.RUN_CREATE_TRIMMED_FILE.lower() == 'yes' and Acc_Post_Processing_Orchestra.RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'no' and Acc_Post_Processing_Orchestra.RUN_COLLAPSE_RESULTS_TO_DAILY.lower() == 'no':
+        if config.count_prefixes.lower() == '1h':
+            level = 'HOURLY'
+        if config.count_prefixes.lower() == '1m':
+            level = 'MINUTE LEVEL'
+        Acc_Post_Processing_Orchestra.print_message(f"CREATING TRIMMED {level} FILES")
+        for file_id in file_list:
+            time_resolution, df = reading_part_proc(date_orig='DATETIME_ORIG')
+
+            # Truncating data (depending on what is specified in config file) and creating dataframe if no valid data:
+            df = remove_data(df)
+            row_count, flag_valid_total = creating_dummy(df, file_id, time_resolution)
+            df = trimmed_dataset(df, file_id, time_resolution, output_trimmed_df='Yes')
+
+    # Collapsing results to summary level if specified in orchestra file
     if Acc_Post_Processing_Orchestra.RUN_COLLAPSE_RESULTS_TO_SUMMARY.lower() == 'yes':
         Acc_Post_Processing_Orchestra.print_message("COLLAPSING DATA TO INDIVIDUAL SUMMARY FILES")
         for file_id in file_list:
