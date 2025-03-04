@@ -11,9 +11,14 @@ For detailed user guides on setting up and running the script, refer to the repo
 ### Further notes 
 - This process has been developed on Windows and has **NOT** been tested on other operating systems, such as macOS.
 - The script has been tested on Python version 3.12. Future versions may be incompatible, but testing will occur as new versions are released.
-- The script has been tested on hourly (h) level data and has **NOT** been tested on minute (m) level data. With current setup the ```SUB_SET_PREFIXES``` in the config file should remain as they are (keeping "1h", "metadata").
-- The script assumes that **ID** will be the first part of filename. It can extra the ID from filenames formatted as either **ID** or **ID_DeviceNumber** (It can be other details than the device number, but it is importaint that ID and additional details are seperated by an underscore). If your filename differs, you will need to edit the code to accomodate this. The section to modify can be found in ```Collapse_Results.py``` under **Creating id variable if it doesn't already exist**. 
-
+- The script assumes that **ID** will be the first part of filename. It can extra the ID from filenames formatted as either **ID** or **ID_DeviceNumber** (It can be other details than the device number, but it is importaint that ID and additional details are seperated by an underscore). If your filename differs, you will need to edit the code to accomodate this. The section to modify can be found in ```Collapse_Results.py``` under **Creating id variable if it doesn't already exist**.
+- The script can create **minute level, hourly, daily and summary release files**. NOTE: If you useg the minute-level output, you can only create the minute-level release file. These files cannot be used to generate hourly, daily and summary files. To generate the hourly, daily and summary release files, you must use the hourly-level output.  Modify the following variables in the config file to specify the processing level:
+    - ```SUB_SET_PREFIXES```
+        - ["1h", "metadata"]  &rarr; To create hourly, daily and summary release files.
+        - ["1m", "metadata"]  &rarr; To create minute-level release files.
+    - ```count_prefixes```
+        - ['1h'] &rarr;  To create hourly, daily and summary release files.
+        - ['1m'] &rarr;  To create minute-level release files.
 
 # Downloading and preparing the environment
 ### Set up folder structure
