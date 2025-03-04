@@ -30,7 +30,8 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
 
     file_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.SUMMARY_FOLDER, import_file_name)
     if os.path.exists(file_path):
-        df = pd.read_csv(file_path)
+        df = pd.read_csv(file_path, dtype={'subject_code': str})
+
     else:
         print(f"The file {file_path} does not exist. The release on {release_level} level could not be prepared.")
         df = pd.DataFrame()
@@ -223,7 +224,7 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
             return ordered_variables
 
 
-        pampro_variables = ['id', 'filename']
+        pampro_variables = ['id', 'filename', 'subject_code']
         if release_level == 'summary':
             pampro_variables += ['startdate', 'RecordLength']
 
@@ -232,6 +233,8 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
 
         if release_level == 'hourly':
             pampro_variables += ['timestamp', 'DATETIME', 'DATETIME_ORIG', 'DATE', 'TIME', 'dayofweek', 'hourofday']
+            if config.count_prefixes.lower() == '1m':
+                pampro_variables += ['minuteofhour']
 
         pampro_column_order = pampro_variables
 
@@ -283,7 +286,7 @@ def formatting_file(import_file_name, release_level, pwear, pwear_morning, pwear
             if release_level == 'hourly':
                 remaining_columns += ['Battery_mean', 'days_of_data_processed', 'FLAG_MECH_NOISE', 'freeday_number',
                                       'generic_first_timestamp', 'generic_last_timestamp', 'postend', 'prestart', 'Temperature_mean', 'valid']
-                if config.count_prefixes.lower() == '1h':
+                if config.count_prefixes.lower() == '1h' and 'day_valid' in df.columns:
                     remaining_columns.insert(1, 'day_valid')
             if config.USE_WEAR_LOG.lower() == 'yes':
                 remaining_columns += ['start', 'end', 'flag_no_wear_info', 'flag_missing_starthour', 'flag_missing_endhour']
@@ -658,7 +661,7 @@ if __name__ == '__main__':
         data_dictionary(df=daily_df, filename=config.DAY_OUTPUT_FILE, release_level='daily', pwear=config.DAY_PWEAR, pwear_quad=config.DAY_PWEAR_QUAD, append_level='daily')
 
     # Preparing hourly release file
-    if Acc_Post_Processing_Orchestra.RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes':
+    if Acc_Post_Processing_Orchestra.RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes' or Acc_Post_Processing_Orchestra.RUN_PREPARE_MINUTE_LEVEL_RELEASE.lower() == 'yes':
         if config.count_prefixes.lower() == '1h':
             Acc_Post_Processing_Orchestra.print_message("PREPARING A HOURLY RELEASE FILE")
         if config.count_prefixes.lower() == '1m':
