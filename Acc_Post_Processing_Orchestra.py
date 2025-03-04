@@ -22,15 +22,18 @@ RUN_PAMPRO_MERGE_METAFILES = 'Yes'           # This needs running if acceleromet
 RUN_PAMPRO_COLLATE_ANOMALIES = 'Yes'         # This needs running to include information on anomalies if files are processed through Pampro.
 RUN_FILELIST_GENERATION = 'Yes'              # Create a filelist of all Wave output files. Depending on what is specified in the config.py, this might be all available or only the new files (that are not in the appended summary file)
 RUN_GENERIC_EXH_POSTPROCESSING = 'Yes'       # Generic exhaustive post processing works through generic updates to the Wave output. This needs to be completed before collapsing any data.
+RUN_CREATE_TRIMMED_FILE = 'No'             # Creates an hourly/minute level trimmed file using the file created from exhaustive post processing. This is automatically generated if RUN_COLLAPSE_RESULTS_TO_SUMMARY/DAILY is set to 'Yes'.
 RUN_COLLAPSE_RESULTS_TO_SUMMARY = 'Yes'      # Takes the file created from exhaustive post processing and collapses it down to a summary (1 line) file. These are saved as individual files.
 RUN_COLLAPSE_RESULTS_TO_DAILY = 'Yes'        # Takes the file created from exhaustive post processing and collapses it down to a daily (1 line per day) file. These are saved as individual files.
-RUN_APPEND_SUMMARY_FILES = 'Yes'             # Appends together the individual summary level data files (created within the collapse results to summary file)
-RUN_APPEND_DAILY_FILES = 'Yes'               # Appends together the daily level data files (created within the collapse results to summary file)
-RUN_APPEND_HOURLY_FILES = 'Yes'              # Appends together the hourly level data files (created within the collapse results to summary file)
-RUN_VERIFICATION_CHECKS = 'Yes'              # Verification code will run some basic checks on the summary and hourly level data looking for potential issues (i.e. duplicate/ extreme outliers). Does not need to be ran to prepare release files, but useful to fully check data. Will be outputted in the _logs folder.
+RUN_APPEND_SUMMARY_FILES = 'Yes'             # Appends the individual summary level data files (created within the collapse results to summary file)
+RUN_APPEND_DAILY_FILES = 'Yes'               # Appends the daily level data files (created within the collapse results to summary file)
+RUN_APPEND_HOURLY_FILES = 'Yes'              # Appends the hourly level data files (created within the collapse results to summary file)
+RUN_APPEND_MINUTE_LEVEL_FILES = 'No'       # Appends the minute level data files (Created within the collapse results python file if "RUN_CREATE_TRIMMED_FILE" is set to Yes.
+RUN_VERIFICATION_CHECKS = 'Yes'              # Verification code will run some basic checks on the summary and hourly/minute level data looking for potential issues (i.e. duplicate/ extreme outliers). Does not need to be ran to prepare release files, but useful to fully check data. Will be outputted in the _logs folder.
 RUN_PREPARE_SUMMARY_RELEASE = 'Yes'          # Prepares summary releases. Will be outputted in the _releases folder together with a data dictionary.
 RUN_PREPARE_DAILY_RELEASE = 'Yes'            # Prepares daily releases. Will be outputted in the _releases folder together with a data dictionary.
 RUN_PREPARE_HOURLY_RELEASE = 'Yes'           # Prepares hourly releases. Will be outputted in the _releases folder together with a data dictionary.
+RUN_PREPARE_MINUTE_LEVEL_RELEASE = 'No'    # Prepares minute-level releases. Will be outputted in the _releases folder together with a data dictionary.
 
 # Python executable used in the virtual environment
 venv_python = sys.executable
@@ -81,7 +84,7 @@ if __name__ == '__main__':
         run_script("Verification_Checks.py")
 
     # Preparing releases
-    if RUN_PREPARE_SUMMARY_RELEASE.lower() == 'yes' or RUN_PREPARE_DAILY_RELEASE.lower() == 'yes' or RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes':
+    if RUN_PREPARE_SUMMARY_RELEASE.lower() == 'yes' or RUN_PREPARE_DAILY_RELEASE.lower() == 'yes' or RUN_PREPARE_HOURLY_RELEASE.lower() == 'yes' or RUN_PREPARE_MINUTE_LEVEL_RELEASE.lower() == 'yes':
         run_script("Prepare_releases.py")
 
     print_message(Fore.BLUE + "The Acc Post Processing code has finished running successfully. \n If ran in PyCharm you can now close PyCharm. \n If ran as batch file: Press Enter to close the script." + Fore.RESET)
