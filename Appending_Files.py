@@ -172,7 +172,6 @@ def appending_no_analysis_files(no_analysis_files, appended_df, file_name):
             merged_df['valid'] = merged_df['valid'].replace('', np.nan)
             merged_df['valid'] = merged_df['valid'].astype('bool', errors='ignore')
 
-
     # Outputting appended summary dataframe
     output_file_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.SUMMARY_FOLDER)
     os.makedirs(output_file_path, exist_ok=True)
@@ -193,7 +192,7 @@ if __name__ == '__main__':
         appending_no_analysis_files(no_analysis_files, summary_appended_df, file_name=config.SUM_OUTPUT_FILE)
 
     # Appending hourly/minute level trimmed files
-    if Acc_Post_Processing_Orchestra.RUN_APPEND_HOURLY_FILES.lower() == 'yes':
+    if Acc_Post_Processing_Orchestra.RUN_APPEND_HOURLY_FILES.lower() == 'yes' or Acc_Post_Processing_Orchestra.RUN_APPEND_MINUTE_LEVEL_FILES.lower() == 'yes':
         if config.count_prefixes.lower() == '1h':
             Acc_Post_Processing_Orchestra.print_message("APPENDING ALL INDIVIDUAL HOURLY FILES TOGETHER")
         if config.count_prefixes.lower() == '1m':
