@@ -172,6 +172,8 @@ def merging_data(files_list, metadata_dfs, datafiles_dfs, anomalies_df):
         merged_df['TIME'] = pd.to_datetime(merged_df['DATETIME']).dt.time
         merged_df['hourofday'] = pd.to_datetime(merged_df['DATETIME']).dt.hour + 1
         merged_df['dayofweek'] = merged_df['DATETIME'].apply(lambda x: x.isoweekday())
+        if config.count_prefixes.lower() == '1m':
+            merged_df['minuteofhour'] = pd.to_datetime(merged_df['DATETIME']).dt.minute + 1
 
         # Changing order of columns
         columns = merged_df.columns.tolist()
@@ -181,6 +183,8 @@ def merging_data(files_list, metadata_dfs, datafiles_dfs, anomalies_df):
         columns.insert(5, columns.pop(columns.index('dayofweek')))
         columns.insert(6, columns.pop(columns.index('hourofday')))
         columns.insert(7, columns.pop(columns.index('DATETIME_ORIG')))
+        if config.count_prefixes.lower() == '1m' and 'minuteofhour' in columns:
+            columns.insert(7, columns.pop(columns.index('minuteofhour')))
         merged_df = merged_df[columns]
 
         merged_dfs.append(merged_df)
@@ -277,7 +281,6 @@ def wear_log(formatted_dfs):
 
         # Merging wear log with each file, merging on id
         for i, formatted_df in enumerate(formatted_dfs):
-            #formatted_df['id'] = formatted_df['file_id'].apply(lambda x: x.split('_', 1)[0])
             id_series = formatted_df['file_id'].str.split('_', n=1).str[0]
             formatted_df = pd.concat([formatted_df, pd.DataFrame({'id': id_series})], axis=1)
             formatted_df = pd.merge(formatted_df, wear_df, how='outer', on='id', indicator=True)
@@ -332,12 +335,21 @@ def mechanical_noise(formatted_dfs):
 
                 # Specifying rows to filter conditions on
                 for _, row in conditions_df.iterrows():
-                    conditions = (
+                    if config.count_prefixes.lower() == '1h':
+                        conditions = (
+                            (formatted_df['DATE'] == row['DATE']) &
+                            (formatted_df['hourofday'] == row['hourofday']) &
+                            (formatted_df['dayofweek'] == row['dayofweek']) &
+                            (formatted_df['file_id'] == row['file_id'])
+                        )
+                    if config.count_prefixes.lower() == '1m':
+                        conditions = (
                         (formatted_df['DATE'] == row['DATE']) &
+                        (formatted_df['minuteofhour'] == row['minuteofhour']) &
                         (formatted_df['hourofday'] == row['hourofday']) &
                         (formatted_df['dayofweek'] == row['dayofweek']) &
                         (formatted_df['file_id'] == row['file_id'])
-                    )
+                        )
 
                     # Changing Pwear to 0 where conditions are met
                     formatted_df.loc[conditions, 'Pwear'] = 0
@@ -357,6 +369,7 @@ def outputting_dataframe(dataframes, files_list):
         # Rounding all numeric columns to 4 decimal places
         numeric_columns = dataframe.select_dtypes(include=['float64', 'float32']).columns
         dataframe[numeric_columns] = dataframe[numeric_columns].round(6)
+
 
         file_path = os.path.join(config.ROOT_FOLDER, config.RESULTS_FOLDER, config.SUMMARY_FOLDER, config.INDIVIDUAL_PARTPRO_F, config.TIME_RES_FOLDER)
         os.makedirs(file_path, exist_ok=True)
