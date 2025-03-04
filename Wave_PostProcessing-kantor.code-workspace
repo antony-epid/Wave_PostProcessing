@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../TestWave"
+		},
+		{
+			"path": "../../../../../../rds/project/rjh234/rds-rjh234-deeplearning"
+		}
+	],
+	"settings": {}
+}
