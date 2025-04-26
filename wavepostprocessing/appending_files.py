@@ -127,16 +127,19 @@ def appending_no_analysis_files(no_analysis_files, appended_df, file_name):
 
             # Specifying what variables to keep
             variables_to_keep = [
-                '.*start_error*.', '.*end_error*.', 'calibration_method', 'noise_cutoff_mg',
-                'generic_first_timestamp', 'generic_last_timestamp', 'device', 'processing_epoch'
+            #    '.*start_error*.', '.*end_error*.', 'calibration_method', 'noise_cutoff_mg',
+            #    'generic_first_timestamp', 'generic_last_timestamp', 'device', 'processing_epoch'
+
+                '.*start_error*.', '.*end_error*.', '^calibration_method$', '^noise_cutoff_mg$',
+                '^generic_first_timestamp$', '^generic_last_timestamp$', '^device$', '^processing_epoch$', '^frequency$'
             ]
             # Variables to keep if processed through Wave
             if config.get('processing').lower() == 'wave':
                 variables_to_keep.extend(['.*anom*.', '.*batt*.'])
             # Variables to keep if processed through Pampro
             if config.get('processing').lower() == 'pampro':
-                variables_to_keep.extend(['calibration_type', 'QC_axis_anomaly'])
-
+                #variables_to_keep.extend(['calibration_type', 'QC_axis_anomaly'])
+                variables_to_keep.extend(['^calibration_type$', '^QC_axis_anomaly$'])
             # Joining the variables to be able to use regular expression
             combined_variables = '|'.join(variables_to_keep)
             no_analysis_metadata_df = no_analysis_metadata_df.filter(regex=combined_variables)
@@ -205,8 +208,12 @@ if __name__ == '__main__':
         appending_no_analysis_files(no_analysis_files, summary_appended_df, file_name=config.get('sum_output_file'))
 
     # Appending hourly trimmed files
-    if config.get('run_append_hourly_files').lower() == 'yes':
-        print_message("APPENDING ALL INDIVIDUAL HOURLY FILES TOGETHER")
+    if config.get('run_append_hourly_files').lower() == 'yes' or config.get('run_append_minute_level_files').lower() == 'yes':
+        if config.get('count_prefixes').lower() == '1h':
+           print_message("APPENDING ALL INDIVIDUAL HOURLY FILES TOGETHER")
+        if config.get('count_prefixes').lower() == '1m':
+           print_message("APPENDING ALL INDIVIDUAL MINUTE LEVEL FILES")
+
         hourly_file_path = create_filelist(folder=config.get('individual_trimmed_f'))
         hourly_files_list = remove_files(output_file=config.get('hour_output_file'))
         hourly_appended_df = appending_files(hourly_files_list, file_path=hourly_file_path, append_level='hourly')

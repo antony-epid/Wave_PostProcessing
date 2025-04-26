@@ -50,7 +50,7 @@ def main():
         print_message("Running Verification Checks")
         jid = submit_jobs("verification_checks.py", args.directory, arrsize=1,num_cpu=1, jid=jid, budgacc=mybudgacc)
 
-    if config.get("run_prepare_summary_release").lower() == 'yes' or config.get("run_prepare_daily_release").lower() == 'yes' or config.get("run_prepare_hourly_release").lower() == 'yes':
+    if config.get("run_prepare_summary_release").lower() == 'yes' or config.get("run_prepare_daily_release").lower() == 'yes' or config.get("run_prepare_hourly_release").lower() == 'yes' or  config.get("run_prepare_minute_level_release").lower() == 'yes':
         print_message("Preparing Release Files")
         jid = submit_jobs("prepare_releases.py", args.directory,  arrsize=1,num_cpu=1, jid=jid, budgacc=mybudgacc)
 
