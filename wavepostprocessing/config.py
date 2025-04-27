@@ -26,7 +26,10 @@ def load_config(directory="."):
 
     dictconfig["sum_output_file"] = f"{dictconfig['project']}_SUMMARY_MEANS"
     dictconfig["day_output_file"] = f"{dictconfig['project']}_DAILY_MEANS"
-    dictconfig["hour_output_file"] = f"{dictconfig['project']}_HOURLY_TRIMMED_MEANS"
+    if dictconfig["count_prefixes"] == '1h':
+       dictconfig["hour_output_file"] = f"{dictconfig['project']}_HOURLY_TRIMMED_MEANS"
+    elif dictconfig["count_prefixes"] == '1m':
+       dictconfig["hour_output_file"] = f"{dictconfig['project']}_MINUTE_TRIMMED_MEANS"
 
     dictconfig["time_res_folder"] = f"{dictconfig['count_prefixes']}_level"
     dictconfig["output_file_ext"] = f"{dictconfig['count_prefixes']}_part_proc"
