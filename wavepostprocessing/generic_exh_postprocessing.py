@@ -176,6 +176,8 @@ def merging_data(files_list, metadata_dfs, datafiles_dfs, anomalies_df):
         merged_df['TIME'] = pd.to_datetime(merged_df['DATETIME']).dt.time
         merged_df['hourofday'] = pd.to_datetime(merged_df['DATETIME']).dt.hour + 1
         merged_df['dayofweek'] = merged_df['DATETIME'].apply(lambda x: x.isoweekday())
+        if config['count_prefixes'].lower() == '1m':
+            merged_df['minuteofhour'] = pd.to_datetime(merged_df['DATETIME']).dt.minute + 1
 
         # Changing order of columns
         columns = merged_df.columns.tolist()
@@ -185,6 +187,8 @@ def merging_data(files_list, metadata_dfs, datafiles_dfs, anomalies_df):
         columns.insert(5, columns.pop(columns.index('dayofweek')))
         columns.insert(6, columns.pop(columns.index('hourofday')))
         columns.insert(7, columns.pop(columns.index('DATETIME_ORIG')))
+        if config['count_prefixes'].lower() == '1m' and 'minuteofhour' in columns:
+            columns.insert(7, columns.pop(columns.index('minuteofhour')))        
         merged_df = merged_df[columns]
 
         merged_dfs.append(merged_df)
@@ -206,6 +210,9 @@ def indicator_variable(time_resolutions, merged_dfs):
         merged_df['temp_flag_no_valid_days'] = 1 if not merged_df['valid'].any() else None
         if merged_df['valid'].any():
             merged_df = merged_df.loc[merged_df['valid']]
+
+        # Making copy of dataframe to improve memory
+        merged_df = merged_df.copy()
 
         # Turning of notifications that we are using slices of dataframe.
         pd.options.mode.chained_assignment = None
@@ -243,12 +250,22 @@ def pwear_variables(valid_dfs, time_resolutions):
         else:
             pass
 
+        #Checking if HPFVM_0plus exists and then convert to fractions of time
+        if 'HPFVM_0plus' in valid_df.columns:
+            variables_to_convert = [col for col in valid_df.columns if col.startswith('HPFVM_') and col.endswith('plus')]
+
+            for variable in variables_to_convert:
+                valid_df[variable] = (valid_df[variable] / (60/valid_df['processing_epoch'])) / time_resolution
+        else:
+            pass
+
         # Generating pwear variables and removing negative values
-        valid_df['Pwear'] = valid_df['ENMO_0plus']
+        pwear_columns = valid_df['ENMO_0plus'].copy()
+        valid_df = pd.concat([valid_df, pd.DataFrame({'Pwear': pwear_columns})], axis=1)  
         valid_df.loc[valid_df['ENMO_mean'] < 0, 'Pwear'] = 0
 
         # Looking for HPFVM/PITCH/ROLL/ENMO MEAN
-        variables_to_check = ["HPFVM", "PITCH", "ROLL", 'ENMO_mean']
+        variables_to_check = ["HPFVM_mean", "PITCH_mean", "ROLL_mean", 'ENMO_mean']        
         for var in variables_to_check:
             if var in valid_df.columns:
                 valid_df.loc[valid_df['ENMO_n'] == 0, var] = None
@@ -270,10 +287,12 @@ def wear_log(formatted_dfs):
 
         # Merging wear log with each file, merging on id
         for i, formatted_df in enumerate(formatted_dfs):
-            formatted_df['id'] = formatted_df['file_id'].apply(lambda x: x.split('_', 1)[0])
+            id_series = formatted_df['file_id'].str.split('_', n=1).str[0]
+            formatted_df = pd.concat([formatted_df, pd.DataFrame({'id': id_series})], axis=1)
             formatted_df = pd.merge(formatted_df, wear_df, how='outer', on='id', indicator=True)
             formatted_df = formatted_df[formatted_df['_merge'] != 'right_only']
             formatted_df['day_valid'] = 0
+            formatted_df['flag_no_wear_info'] = 0
             if formatted_df['_merge'].iloc[0] == 'both':
                 formatted_df['day_valid'] = formatted_df.apply(lambda x: 1 if x['start'] <= x['DATETIME'] < x['end'] else 0, axis=1)
             if formatted_df['_merge'].iloc[0] == 'left_only':
@@ -321,8 +340,17 @@ def mechanical_noise(formatted_dfs):
 
                 # Specifying rows to filter conditions on
                 for _, row in conditions_df.iterrows():
-                    conditions = (
+                    if config['count_prefixes'].lower() == '1h':
+                        conditions = (
+                            (formatted_df['DATE'] == row['DATE']) &
+                            (formatted_df['hourofday'] == row['hourofday']) &
+                            (formatted_df['dayofweek'] == row['dayofweek']) &
+                            (formatted_df['file_id'] == row['file_id'])
+                        )
+                    if config['count_prefixes'].lower() == '1m':
+                        conditions = (
                         (formatted_df['DATE'] == row['DATE']) &
+                        (formatted_df['minuteofhour'] == row['minuteofhour']) &
                         (formatted_df['hourofday'] == row['hourofday']) &
                         (formatted_df['dayofweek'] == row['dayofweek']) &
                         (formatted_df['file_id'] == row['file_id'])
