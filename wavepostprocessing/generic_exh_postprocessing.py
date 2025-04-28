@@ -13,8 +13,8 @@ import pandas as pd
 import pytz
 from datetime import datetime, timedelta
 from colorama import Fore
-#from wavepostprocessing.config import load_config
-from config import load_config
+from wavepostprocessing.config import load_config
+#from config import load_config
 import sys
 
 # READING IN FILELIST

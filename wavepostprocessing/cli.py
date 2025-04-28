@@ -1,10 +1,10 @@
 import os
 import argparse
 from colorama import Fore
-#from wavepostprocessing.config import load_config, print_message
-#from wavepostprocessing.batch_processing import submit_jobs
-from config import load_config, print_message
-from batch_processing import submit_jobs, run_script
+from wavepostprocessing.config import load_config, print_message
+from wavepostprocessing.batch_processing import submit_jobs, run_script
+#from config import load_config, print_message
+#from batch_processing import submit_jobs, run_script
 #import sys
 
 def print_message(message):
