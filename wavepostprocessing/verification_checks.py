@@ -14,9 +14,10 @@ import pandas as pd
 from docx.shared import RGBColor
 import operator
 from docx.enum.section import WD_ORIENTATION, WD_SECTION
-from Housekeeping import filenames_to_remove
-#from wavepostprocessing.config import load_config, print_message
-from config import load_config, print_message
+from wavepostprocessing.Housekeeping import filenames_to_remove
+from wavepostprocessing.config import load_config, print_message
+#from Housekeeping import filenames_to_remove
+#from config import load_config, print_message
 import sys
 from datetime import datetime
 

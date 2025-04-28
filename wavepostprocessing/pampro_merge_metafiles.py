@@ -10,8 +10,8 @@
 import os
 import pandas as pd
 #import config
-#from wavepostprocessing.config import load_config
-from config import load_config
+from wavepostprocessing.config import load_config
+#from config import load_config
 import sys
 
 # --- GETTING LIST OF META FILES --- #

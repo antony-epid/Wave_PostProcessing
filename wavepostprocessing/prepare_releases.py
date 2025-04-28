@@ -15,8 +15,8 @@ from colorama import Fore
 from datetime import date, datetime
 from Housekeeping import filenames_to_remove
 import numpy as np
-#from wavepostprocessing.config import load_config, print_message
-from config import load_config, print_message
+from wavepostprocessing.config import load_config, print_message
+#from config import load_config, print_message
 import sys
 
 #########################################################

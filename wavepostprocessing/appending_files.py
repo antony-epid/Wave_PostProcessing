@@ -9,8 +9,8 @@ import config
 import os
 import pandas as pd
 import numpy as np
-#from wavepostprocessing.config import load_config, print_message
-from config import load_config, print_message
+from wavepostprocessing.config import load_config, print_message
+#from config import load_config, print_message
 import sys
 
 ############################################################################################################

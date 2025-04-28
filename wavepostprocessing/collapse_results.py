@@ -12,8 +12,8 @@ import config
 from datetime import timedelta
 import numpy as np
 import statsmodels.api as sm
-#from wavepostprocessing.config import load_config, print_message
-from config import load_config, print_message
+from wavepostprocessing.config import load_config, print_message
+#from config import load_config, print_message
 import sys
 
 ##################

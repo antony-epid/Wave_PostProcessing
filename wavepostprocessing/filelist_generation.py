@@ -7,8 +7,8 @@
 # --- IMPORTING PACKAGES --- #
 import os
 import pandas as pd
-#from wavepostprocessing.config import load_config
-from config import load_config
+from wavepostprocessing.config import load_config
+#from config import load_config
 from colorama import Fore
 import sys
 
