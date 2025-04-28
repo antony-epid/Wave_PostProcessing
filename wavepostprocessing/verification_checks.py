@@ -36,7 +36,8 @@ def add_header(log_header):
     :param log_header: Header in verification log.
     :return:
     """
-    verif_log.add_page_break()
+    if len(verif_log.paragraphs) > 2:
+        verif_log.add_page_break()
     verif_log.add_heading(f"{log_header} - {config.get('pc_date')}")
     save_verif_log(verif_log)
 
@@ -125,8 +126,7 @@ def dataframe(file_name, variable):
     """
     dataframe_path = os.path.join(config.get('root_folder'), config.get('results_folder'), config.get('summary_folder'), f'{file_name}.csv')
     if os.path.exists(dataframe_path):
-        df = pd.read_csv(dataframe_path)
-
+        df = pd.read_csv(dataframe_path, dtype={'subject_code': str})
         file_exists = True
         if config.get('run_housekeeping').lower() == 'yes':
             df = df[(~df[variable].isin(filenames_to_remove))]
@@ -715,7 +715,10 @@ def compare_enmo(df, log, create_var, var_diff, text_to_log, text_no_error):
     :return:
     """
     if config.get('remove_thresholds').lower() == 'no':
-        df[create_var] = df['ENMO_0plus'] * 720
+        if config['count_prefixes'].lower() == '1h':
+            df[create_var] = df['ENMO_0plus'] * 720
+        if config['count_prefixes'].lower() == '1m':
+            df[create_var] = df['ENMO_0plus'] * 12
 
         # Generating difference between ENMO_n and ENMO_0plus_check
         df[var_diff] = df.apply(lambda x: abs(x['ENMO_n'] - x[create_var]) if x['ENMO_n'] != x[create_var] else 0, axis=1)
@@ -952,11 +955,12 @@ if __name__ == '__main__':
 
     # --- SECTION 1: VERIFICATION OF OUTPUT SUMMARY OVERALL MEANS --- #
     # Creating verification log and importing summary dataframe
-    verif_log = create_verif_log("VERIFICATION OF OUTPUT SUMMARY OVERALL MEANS")
+    verif_log = create_verif_log("VERIFICATION LOG")
     summary_df, summary_file_exists = dataframe(file_name=config.get('sum_output_file'), variable='id')
 
     # If dataframe exists, print out files processed, devices used and summary of start dates
     if summary_file_exists:
+        add_header(log_header=f"VERIFICATION OF OUTPUT SUMMARY OVERALL MEANS")        
         information_to_verif_log(log=verif_log, df=summary_df, table='No', variable_to_count='id', text_to_log="Number of files processed", count_mode='total')
         information_to_verif_log(log=verif_log, df=summary_df, table='Yes', variable_to_count='device', text_to_log="Number of devices used", count_mode='unique')
         df = sum_startdate(log=verif_log, df=summary_df, text_to_log="Summary of start dates:", description="Check that the minimum and maximum start date falls within the expected testing dates.", x=0, y=0, z=0)
@@ -1257,7 +1261,12 @@ if __name__ == '__main__':
                  text_to_log="Look through the highest values of enmo_mean for potential outliers.", filtering='highest', level='hourly')
         portrait(verif_log)
 
-        # Checking files/timepoints that are flagged as mechanical noise
+       # Checking files/timepoints that are flagged as mechanical noise
+        if config['count_prefixes'].lower() == '1h':
+            variables_table = ['id', 'dayofweek', 'hourofday', 'ENMO_mean', 'Pwear']
+        if config['count_prefixes'].lower() == '1m':
+            variables_table = ['id', 'dayofweek', 'hourofday', 'minuteofhour', 'ENMO_mean', 'Pwear']
+            
         enmo_flag(
             df=hourly_df,
             log=verif_log,
