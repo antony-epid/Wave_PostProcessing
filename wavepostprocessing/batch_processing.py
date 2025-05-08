@@ -13,7 +13,9 @@ def submit_jobs(script_name, config_path, arrsize=10, num_cpu=1, jid=None, budga
     """
     # Get the absolute path to the script inside 'scripts/' directory
     #script_path = os.path.join(os.path.dirname(__file__), "scripts", script_name)
-    script_path = os.path.join(os.path.dirname(__file__), script_name)
+    #script_path = os.path.join(os.path.dirname(__file__), script_name)
+    script_path =  script_name
+    script_submit = os.path.join(os.path.dirname(__file__), "submit_wavejobs.sh")
     #script_path = "wavepostprocessing.scripts." +  script_name[:-3]
 
     ## Ensure the script exists
@@ -22,7 +24,8 @@ def submit_jobs(script_name, config_path, arrsize=10, num_cpu=1, jid=None, budga
 
     cmdargs = [f"--account={budgacc}", f"--array=1-{arrsize}", f"--cpus-per-task={num_cpu}", "--time=00:20:00"]
 
-    sbatch_command = ["sbatch"] + cmdargs + (["--depend=afterany:" + jid] if jid else []) + ["submit_wavejobs.sh", script_path, config_path]
+    #sbatch_command = ["sbatch"] + cmdargs + (["--depend=afterany:" + jid] if jid else []) + ["submit_wavejobs.sh", script_path, config_path]
+    sbatch_command = ["sbatch"] + cmdargs + (["--depend=afterany:" + jid] if jid else []) + [script_submit, script_path, config_path]
 
     try:
         output = subprocess.check_output(sbatch_command).decode().strip()

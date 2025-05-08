@@ -27,7 +27,8 @@ source "/rfs/project/rfs-Bl26eNcUDB8/users_writeable/antony_runs/Venvs/wave-post
 #-----------catch the job id and change the status file into running ?
 #srun python $@ ${SLURM_ARRAY_TASK_ID} ${SLURM_ARRAY_TASK_COUNT} #start python with script and args specified on sbatch line
 #srun python $@ 1 1 #start python with script and args specified on sbatch line
-srun python $@ ${SLURM_ARRAY_TASK_ID} ${SLURM_ARRAY_TASK_COUNT} #start python with script and args specified on sbatch line
+#srun python $@ ${SLURM_ARRAY_TASK_ID} ${SLURM_ARRAY_TASK_COUNT} #start python with script and args specified on sbatch line
+srun python -m $@ ${SLURM_ARRAY_TASK_ID} ${SLURM_ARRAY_TASK_COUNT} #start python with script and args specified on sbatch line
 #srun python -m $@ ${SLURM_ARRAY_TASK_ID} ${SLURM_ARRAY_TASK_COUNT} #start python with script and args specified on sbatch line
 #srun python $@ 4 20 #start python with script and args specified on sbatch line
 #catch the job id and move the status file ?

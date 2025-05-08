@@ -930,7 +930,7 @@ if __name__ == '__main__':
         print_message("COLLAPSING DATA TO INDIVIDUAL SUMMARY FILES")
 
     # Creating and outputting trimmed hourly/minute level file if specifies in orchestra file and the other collapse files are not needed
-    if config["RUN_CREATE_TRIMMED_FILE"].lower() == 'yes' and config['run_collapse_results_to_summary'].lower() == 'no' and config['run_collapse_results_to_daily'].lower() == 'no':
+    if config["run_create_trimmed_file"].lower() == 'yes' and config['run_collapse_results_to_summary'].lower() == 'no' and config['run_collapse_results_to_daily'].lower() == 'no':
         if config["count_prefixes"].lower() == '1h':
             level = 'HOURLY'
         if config["count_prefixes"].lower() == '1m':
