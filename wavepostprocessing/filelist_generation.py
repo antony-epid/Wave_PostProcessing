@@ -142,7 +142,8 @@ def remove_files():
     filelist_df['serial'] = filelist_df.groupby('filename_temp').ngroup() + 1
     filelist_df.sort_values(by='serial', inplace=True)
 
-    num_splits=10
+    #num_splits=10
+    num_splits = config.get('num_filelist', 10)
 
     # Idea from the following for uniform distribution
     #k, m = divmod(len(df), n)
