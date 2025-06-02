@@ -8,7 +8,7 @@
 ############################################################################################################
 # IMPORTING PACKAGES #
 import docx
-import config
+#import config
 import os
 import pandas as pd
 from docx.shared import RGBColor

@@ -5,7 +5,7 @@
 # Version: 1.0 Translated from Stata code
 ############################################################################################################
 # IMPORTING PACKAGES #
-import config
+#import config
 import os
 import pandas as pd
 import numpy as np

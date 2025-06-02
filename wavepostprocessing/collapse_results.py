@@ -8,7 +8,7 @@
 # IMPORTING PACKAGES #
 import os
 import pandas as pd
-import config
+#import config
 from datetime import timedelta
 import numpy as np
 import statsmodels.api as sm

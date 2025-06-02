@@ -9,7 +9,6 @@ import os
 
 from numpy.ma.core import angle
 
-import config
 import pandas as pd
 from colorama import Fore
 from datetime import date, datetime

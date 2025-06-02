@@ -7,7 +7,7 @@
 ############################################################################################################
 # Importing packages
 import numpy as np
-import config
+#import config
 import os
 import pandas as pd
 import pytz
